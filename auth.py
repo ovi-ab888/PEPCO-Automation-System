@@ -37,7 +37,7 @@ def check_login() -> bool:
         return True
 
     import theme
-    theme.main_header("🔒 PEPCO Label Automation", "Please log in to continue.")
+    theme.main_header("🔒 PEPCO Label Automation System", "Please log in to continue.")
 
     # centered, card-styled form — narrower than the full page width
     left, center, right = st.columns([1, 1.3, 1])
