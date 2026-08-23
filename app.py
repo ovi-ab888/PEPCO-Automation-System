@@ -11,7 +11,7 @@ import theme
 import auth
 
 # পেজ কনফিগারেশন
-st.set_page_config(page_title="PEPCO Label Automation", layout="wide")
+st.set_page_config(page_title="PEPCO Label Automation System", layout="wide")
 theme.load_css()  # login page-ও এই style পাবে
 
 # -------------------------------
