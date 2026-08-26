@@ -1,0 +1,11 @@
+[
+  {"name": "Order_ID", "type": "text", "x": 97, "y": 132, "font_size": 9, "font": "tahoma", "prefix": ""},
+  {"name": "Style", "type": "text", "x": 99, "y": 147, "font_size": 9, "font": "tahoma", "prefix": ""},
+  {"name": "Supplier_product_code", "type": "text", "x": 97, "y": 162, "font_size": 9, "font": "tahoma", "prefix": ""},
+  {"name": "Colour", "type": "text", "x": 97, "y": 177, "font_size": 9, "font": "tahoma", "prefix": ""},
+  {"name": "Size", "type": "text", "x": 32, "y": 192, "font_size": 9, "font": "tahoma", "prefix": "SIZE               :  "},
+  {"name": "today_date", "type": "text", "x": 472, "y": 51, "font_size": 9, "font": "tahoma", "prefix": ""},
+  {"name": "Item_classification", "type": "text", "x": 606, "y": 86, "font_size": 8, "font": "tahoma", "prefix": ""},
+  {"name": "Supplier_name", "type": "text", "x": 606, "y": 98, "font_size": 8, "font": "tahoma", "prefix": ""},
+  {"name": "Designer", "type": "text", "x": 472, "y": 74, "font_size": 8, "font": "tahoma", "prefix": ""}
+]
