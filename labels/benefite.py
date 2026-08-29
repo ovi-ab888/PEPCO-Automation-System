@@ -1,0 +1,188 @@
+"""
+labels/benefite.py
+"Benefite Tag and Sticker" — templates live under templates/Benefite/ in
+TWO possible shapes:
+
+  1. Flat file:   templates/Benefite/<Sticker Type>.pdf
+     e.g. templates/Benefite/Two_Pieces_Set.pdf
+     -> a single-variant type, used directly, no dropdown needed.
+
+  2. Nested folder: templates/Benefite/<Sticker Type>/<variant file>.pdf
+     e.g. templates/Benefite/KVI Size Sticker/Kids.pdf
+     -> multiple variants; the UI shows a picker (or auto-picks, see below).
+
+Adding a new sticker type, or a new variant of an existing one, is just
+dropping a new file/folder into templates/Benefite/ on GitHub — no code
+changes needed here or in app.py.
+
+NOTE: Inner & Outer Sticker is intentionally NOT part of this folder — it
+stays its own separate, standalone item (labels/pad_label.py), not scanned
+here.
+
+--- Auto-select-by-Sizes folders (KVI Size Sticker, Utag, ...) ---
+Some folders hold one PDF per size-range family, with the range encoded
+right in the filename, e.g.:
+    templates/Benefite/KVI Size Sticker/KVI Size Sticker 104-134.pdf
+    templates/Benefite/Utag/Utag 134-170.pdf
+For these, no manual variant dropdown is shown — generate_batch_auto_size()
+picks the right file PER ROW by checking whether any of that row's
+(comma-separated) Sizes values appears in the filename. This means a single
+checkbox in the UI can correctly cover rows with different Sizes each,
+without the user choosing anything extra.
+
+Folders using this behaviour are listed in AUTO_SIZE_TYPES below — add a
+type name there when its variant filenames encode sizes this way.
+
+All Benefite templates share the same header layout as Inner_Outer_Sticker/
+Size Tag, so they use config/pad_header_mapping.json too.
+"""
+import os
+import json
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+import fitz
+from engine.label_engine import fill_single_label, generate_multipage_pdf
+
+BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
+BENEFITE_ROOT = os.path.join(BASE_DIR, "templates", "Benefite")
+CONFIG_PATH = os.path.join(BASE_DIR, "config", "pad_header_mapping.json")
+
+# used only as a filename-logic fallback if nothing has been selected yet
+TEMPLATE_PATH = None
+
+# sticker types whose variant files should be auto-matched against each
+# row's Sizes value, rather than picked manually via dropdown
+AUTO_SIZE_TYPES = {"KVI Size Sticker", "Utag"}
+
+
+def _list_subfolders(path: str) -> list:
+    if not os.path.isdir(path):
+        return []
+    return sorted(d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d)))
+
+
+def _list_pdfs(path: str) -> list:
+    if not os.path.isdir(path):
+        return []
+    return sorted(f for f in os.listdir(path) if f.lower().endswith(".pdf"))
+
+
+def list_sticker_types() -> list:
+    """Every available sticker type — both nested folders AND flat
+    top-level PDFs (templates/Benefite/<Type>.pdf, using the filename
+    without extension as the type name)."""
+    types = set(_list_subfolders(BENEFITE_ROOT))
+    for f in _list_pdfs(BENEFITE_ROOT):
+        types.add(os.path.splitext(f)[0])
+    return sorted(types)
+
+
+def list_variants(sticker_type: str) -> list:
+    """PDF filenames for this type — from its folder if nested, or just
+    its single flat file if not."""
+    folder = os.path.join(BENEFITE_ROOT, sticker_type)
+    if os.path.isdir(folder):
+        return _list_pdfs(folder)
+    flat_path = os.path.join(BENEFITE_ROOT, sticker_type + ".pdf")
+    if os.path.exists(flat_path):
+        return [sticker_type + ".pdf"]
+    return []
+
+
+def get_template_path(sticker_type: str, variant_file: str) -> str:
+    folder = os.path.join(BENEFITE_ROOT, sticker_type)
+    if os.path.isdir(folder):
+        return os.path.join(folder, variant_file)
+    return os.path.join(BENEFITE_ROOT, variant_file)
+
+
+def is_auto_size_type(sticker_type: str) -> bool:
+    return sticker_type in AUTO_SIZE_TYPES
+
+
+import re
+
+
+def _extract_range(text: str):
+    """Finds a 'NNN-NNN' range in text, e.g. '104-134' -> (104, 134)."""
+    m = re.search(r"(\d+)\s*-\s*(\d+)", text)
+    if m:
+        return int(m.group(1)), int(m.group(2))
+    return None
+
+
+def _leading_number(token: str):
+    m = re.search(r"\d+", token)
+    return int(m.group()) if m else None
+
+
+def pick_variant_for_row(sticker_type: str, row: dict) -> str:
+    """For AUTO_SIZE_TYPES: finds the variant filename that best matches
+    this row's Sizes value(s) — scores each variant by how many of the
+    row's sizes numerically fall inside that filename's NNN-NNN range
+    (not a raw substring check, since e.g. the token "134" is also a
+    substring of the unrelated range "104-134"). Falls back to the first
+    available variant if nothing scores above zero, or Sizes is blank."""
+    variants = list_variants(sticker_type)
+    if not variants:
+        return None
+
+    sizes_str = str(row.get("Sizes", "")).strip()
+    if not sizes_str:
+        return variants[0]
+
+    size_tokens = [s.strip() for s in sizes_str.split(",") if s.strip()]
+    size_numbers = [n for n in (_leading_number(t) for t in size_tokens) if n is not None]
+
+    best_variant, best_score = None, -1
+    for variant in variants:
+        rng = _extract_range(variant)
+        if rng and size_numbers:
+            lo, hi = rng
+            score = sum(1 for n in size_numbers if lo <= n <= hi)
+        else:
+            # no numeric range in the filename — fall back to a literal
+            # substring check against the whole tokens
+            score = sum(1 for tok in size_tokens if tok.lower() in variant.lower())
+        if score > best_score:
+            best_score, best_variant = score, variant
+
+    return best_variant if best_score > 0 else variants[0]
+
+
+def load_field_config() -> list:
+    with open(CONFIG_PATH, "r") as f:
+        return json.load(f)
+
+
+def generate_single(row: dict, template_path: str) -> bytes:
+    field_config = load_field_config()
+    return fill_single_label(template_path, row, field_config)
+
+
+def generate_batch(rows: list, template_path: str) -> bytes:
+    """rows = list of Excel row dicts. template_path = the specific PDF
+    chosen via the sticker-type/variant selection (use get_template_path())."""
+    field_config = load_field_config()
+    return generate_multipage_pdf(template_path, rows, field_config)
+
+
+def generate_batch_auto_size(rows: list, sticker_type: str) -> bytes:
+    """For AUTO_SIZE_TYPES: picks the right variant file PER ROW (matching
+    that row's Sizes against the available filenames) and merges the
+    result into one PDF — no manual variant selection needed."""
+    field_config = load_field_config()
+    merged = fitz.open()
+    for row in rows:
+        variant = pick_variant_for_row(sticker_type, row)
+        if not variant:
+            continue
+        template_path = get_template_path(sticker_type, variant)
+        single_bytes = fill_single_label(template_path, row, field_config)
+        single_doc = fitz.open("pdf", single_bytes)
+        merged.insert_pdf(single_doc)
+        single_doc.close()
+    out = merged.tobytes()
+    merged.close()
+    return out
