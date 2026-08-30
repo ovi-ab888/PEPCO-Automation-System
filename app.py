@@ -5,6 +5,7 @@ sys.path.append(os.path.dirname(__file__))
 import streamlit as st
 import pandas as pd
 import io
+import json
 import zipfile
 
 import theme
@@ -102,15 +103,25 @@ label_options = {
     },
 }
 
+FILENAME_MAPPING_PATH = os.path.join(os.path.dirname(__file__), "config", "filename_mapping.json")
+try:
+    with open(FILENAME_MAPPING_PATH, "r") as f:
+        FILENAME_MAPPING = json.load(f)
+except FileNotFoundError:
+    FILENAME_MAPPING = {}
+
 
 def _template_name_for(entry: dict) -> str:
-    """The name to use in the download filename for this label type."""
+    """The name to use in the download filename for this label type.
+    Checks config/filename_mapping.json first (template filename / sticker
+    type -> desired download name); falls back to the raw template
+    filename (no extension) if there's no mapping entry."""
     if entry.get("template_name"):
-        return entry["template_name"]
-    path = entry.get("template_path")
-    if not path:
-        return "Sticker"
-    return os.path.splitext(os.path.basename(path))[0]
+        raw_name = entry["template_name"]
+    else:
+        path = entry.get("template_path")
+        raw_name = os.path.splitext(os.path.basename(path))[0] if path else "Sticker"
+    return FILENAME_MAPPING.get(raw_name, raw_name)
 
 
 selected_labels = []
