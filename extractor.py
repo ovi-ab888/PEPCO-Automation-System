@@ -342,7 +342,7 @@ def build_filename(row: dict, extension: str = "pdf", template_name: str = "Stic
     sku = row.get("_temp_sku_for_filename", "UNKNOWN")
     supplier_code = row.get("Supplier_product_code", "UNKNOWN")
     style_val = row.get("Style", "UNKNOWN")
-    return f"PEPCO_{season_val}_{sku}_{template_name}_{supplier_code}_00_{style_val}.{extension}"
+    return f"PEPCO_{season_val}_{sku}_{template_name} {supplier_code}_00_{style_val}.{extension}"
 
 
 def extract_rows_from_pdfs(pdf_files) -> pd.DataFrame:
