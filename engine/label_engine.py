@@ -235,7 +235,7 @@ def fill_single_label(template_path: str, row: dict, field_config: list) -> byte
         # template itself doesn't print (used for pad.pdf, which is fully blank).
         if ftype == "fixed_text":
             font_size = field.get("font_size", 8)
-            color = field.get("color", [0, 0, 1])
+            color = field.get("color", [0, 0, 0, 1])
             color = tuple(c / 255 if c > 1 else c for c in color)
             font_key = field.get("font", "helv")
             fontname = "helv"
@@ -263,7 +263,7 @@ def fill_single_label(template_path: str, row: dict, field_config: list) -> byte
 
         if ftype == "text":
             font_size = field.get("font_size", 8)
-            color = field.get("color", [0, 0, 1])
+            color = field.get("color", [0, 0, 0, 1])
             color = tuple(c / 255 if c > 1 else c for c in color)
             text_out = field.get("prefix", "") + value + field.get("suffix", "")
 
@@ -301,7 +301,7 @@ def fill_single_label(template_path: str, row: dict, field_config: list) -> byte
 
         elif ftype == "barcode":
             barcode_type = field.get("barcode_type", "code128")
-            color = field.get("color", [0, 0, 1])
+            color = field.get("color", [0, 0, 0, 1])
             color = tuple(c / 255 if c > 1 else c for c in color)
 
             if barcode_type == "ean13_vector":
@@ -331,7 +331,7 @@ def fill_single_label(template_path: str, row: dict, field_config: list) -> byte
 
 
 def fill_placeholders_by_search(source, row: dict, font: str = "helv",
-                                 font_size: float = 12, color=(0, 0, 1),
+                                 font_size: float = 12, color=(0, 0, 0, 1),
                                  token_columns: list = None) -> bytes:
     """
     Fills a template by SEARCHING for literal "{ColumnName}" text on the
