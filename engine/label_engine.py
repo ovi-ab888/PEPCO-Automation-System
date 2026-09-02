@@ -1,6 +1,5 @@
 """
 engine/label_engine.py
-
 Shared core engine used by every label type (inner, outer, ...).
 Takes a FIXED template PDF + one Excel row -> returns a filled PDF (bytes).
 
@@ -8,20 +7,19 @@ Field config entry:
 {
     "name": "Excel_Column_Name",
     "type": "text" | "barcode" | "qr",
-    "x": 10, "y": 20,           # position in PDF points, top-left origin
-    "font_size": 8,             # text only
-    "prefix": "Style: ",        # optional, text only
-    "suffix": "",               # optional, text only
-    "cover": [x0, y0, x1, y1],  # optional: white-out a placeholder area first
-    "width": 100, "height": 30, # barcode only
-    "size": 60,                 # qr only
-    "font": "arial",            # optional, key into FONTS dict below
+    "x": 10, "y": 20,                 # position in PDF points, top-left origin
+    "font_size": 8,                   # text only
+    "prefix": "Style: ",              # optional, text only
+    "suffix": "",                     # optional, text only
+    "cover": [x0, y0, x1, y1],        # optional: white-out a placeholder area first
+    "width": 100, "height": 30,       # barcode only
+    "size": 60,                       # qr only
+    "font": "arial",                  # optional, key into FONTS dict below
 }
 """
 
 import io
 import os
-
 import fitz  # PyMuPDF
 import qrcode
 import barcode
@@ -42,11 +40,11 @@ FONTS = {
 
 # PyMuPDF built-in fonts — always available, no file needed
 BUILTIN_FONTS = {
-    "helv": "helv",  # Helvetica
-    "hebo": "hebo",  # Helvetica-Bold
-    "heit": "heit",  # Helvetica-Oblique
-    "cour": "cour",  # Courier
-    "tiro": "tiro",  # Times Roman
+    "helv": "helv",        # Helvetica
+    "hebo": "hebo",        # Helvetica-Bold
+    "heit": "heit",        # Helvetica-Oblique
+    "cour": "cour",        # Courier
+    "tiro": "tiro",        # Times Roman
 }
 
 
@@ -77,7 +75,6 @@ def _make_barcode_image(data: str, barcode_type: str = "code128", color_hex: str
 
     buf = io.BytesIO()
     writer = ImageWriter()
-
     # NOTE: options must be passed to write(), not just the writer constructor.
     # guard_height_factor (taller start/center/end guard bars, standard EAN13
     # look) only takes visual effect when write_text is True — the library ties
@@ -90,7 +87,6 @@ def _make_barcode_image(data: str, barcode_type: str = "code128", color_hex: str
         "font_size": 8,
         "text_distance": 3,
     }
-
     BARCODE_CLASS(code_input, writer=writer).write(buf, options)
     return buf.getvalue()
 
@@ -134,9 +130,8 @@ def draw_ean13_vector(page, x0, y0, code13, target_width, color=(0, 0, 0),
     extend further down) — this is what makes it read as a proper EAN13
     symbol instead of a flat block of bars.
 
-    x0, y0 = top-left of the barcode in PDF points (page coords)
-    target_width = desired total barcode width in points
-
+    x0, y0        = top-left of the barcode in PDF points (page coords)
+    target_width  = desired total barcode width in points
     Returns (total_width_drawn, tall_bar_height) for layout purposes.
     """
     code13 = "".join(ch for ch in str(code13) if ch.isdigit())
@@ -177,24 +172,19 @@ def draw_ean13_vector(page, x0, y0, code13, target_width, color=(0, 0, 0),
             params = _EAN_L[content[i]] if lg == "L" else _EAN_G[content[i]]
             add_rect(params[0], params[1], h)
             add_rect(params[2], params[3], h)
+            state["x"] += gap_d
 
-    state["x"] += gap_d
-    draw_sep(tall_h)  # start guard (tall)
+    draw_sep(tall_h)                              # start guard (tall)
     state["x"] += block * 4
-
-    draw_left_group(code13[0:7], height)  # digits 1-6, normal height
-
-    draw_sep(tall_h)  # center guard (tall)
+    draw_left_group(code13[0:7], height)          # digits 1-6, normal height
+    draw_sep(tall_h)                              # center guard (tall)
     state["x"] += block * 5
-
-    for j in range(7, 12):  # digits 7-11, normal height
+    for j in range(7, 12):                        # digits 7-11, normal height
         draw_right_digit(code13[j], height)
-    state["x"] += gap_d
-
-    draw_right_digit(code13[12], height)  # checksum digit, normal height
+        state["x"] += gap_d
+    draw_right_digit(code13[12], height)          # checksum digit, normal height
     state["x"] += block * 6
-
-    draw_sep(tall_h)  # end guard (tall)
+    draw_sep(tall_h)                              # end guard (tall)
 
     return state["x"], tall_h
 
@@ -217,7 +207,6 @@ def expand_tc_barcode_variants(row: dict, max_variants: int = 7) -> list:
     TC_Number_st1 / Barcode_st1 get overwritten per page so the existing
     single-variant field configs (which read TC_Number_st1/Barcode_st1) work
     unchanged. Returns a list of row dicts, one per page.
-
     Falls back to [row] unchanged if no stN pairs are filled at all (keeps
     plain single-TC rows working exactly as before).
     """
@@ -246,7 +235,7 @@ def fill_single_label(template_path: str, row: dict, field_config: list) -> byte
         # template itself doesn't print (used for pad.pdf, which is fully blank).
         if ftype == "fixed_text":
             font_size = field.get("font_size", 8)
-            color = field.get("color", [0, 0, 0, 1])  # CMYK K100 (pure black)
+            color = field.get("color", [0, 0, 1])
             color = tuple(c / 255 if c > 1 else c for c in color)
             font_key = field.get("font", "helv")
             fontname = "helv"
@@ -264,8 +253,8 @@ def fill_single_label(template_path: str, row: dict, field_config: list) -> byte
 
         if name not in row:
             continue
-
         value = _clean(row[name])
+
         x, y = field["x"], field["y"]
 
         cover = field.get("cover")
@@ -274,7 +263,7 @@ def fill_single_label(template_path: str, row: dict, field_config: list) -> byte
 
         if ftype == "text":
             font_size = field.get("font_size", 8)
-            color = field.get("color", [0, 0, 0, 1])  # CMYK K100 (pure black)
+            color = field.get("color", [0, 0, 1])
             color = tuple(c / 255 if c > 1 else c for c in color)
             text_out = field.get("prefix", "") + value + field.get("suffix", "")
 
@@ -312,7 +301,7 @@ def fill_single_label(template_path: str, row: dict, field_config: list) -> byte
 
         elif ftype == "barcode":
             barcode_type = field.get("barcode_type", "code128")
-            color = field.get("color", [0, 0, 0])
+            color = field.get("color", [0, 0, 1])
             color = tuple(c / 255 if c > 1 else c for c in color)
 
             if barcode_type == "ean13_vector":
@@ -342,7 +331,7 @@ def fill_single_label(template_path: str, row: dict, field_config: list) -> byte
 
 
 def fill_placeholders_by_search(source, row: dict, font: str = "helv",
-                                 font_size: float = 12, color=(0, 0, 0, 1),
+                                 font_size: float = 12, color=(0, 0, 1),
                                  token_columns: list = None) -> bytes:
     """
     Fills a template by SEARCHING for literal "{ColumnName}" text on the
