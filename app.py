@@ -47,6 +47,7 @@ def _reset_all():
     st.session_state.uploader_key += 1
 
 
+theme.render_stage_banner(1, ["Upload / Extract", "Review", "Select & generate"])
 st.button("Upload New File", on_click=_reset_all)
 
 pdf_files = st.file_uploader(
@@ -79,8 +80,7 @@ if (
 # -------------------------------
 # 3. ডেটা এডিটর
 # -------------------------------
-st.subheader("Review & correct extracted data")
-st.caption("Every field is editable — fix anything the extractor got wrong.")
+theme.render_stage_banner(2, ["Upload / Extract", "Review", "Select & generate"])
 corrected_df = st.data_editor(
     st.session_state["pdf_extracted_df"],
     use_container_width=True,
@@ -91,7 +91,7 @@ corrected_df = st.data_editor(
 # -------------------------------
 # 4. লেবেল টাইপ সিলেক্ট ও জেনারেশন
 # -------------------------------
-st.subheader("Select Label Types to Generate")
+theme.render_stage_banner(3, ["Upload / Extract", "Review", "Select & generate"])
 
 # name -> {"generate": callable(rows) -> pdf_bytes,
 #          "template_path": str or None,   (used to derive the filename's template-name part)
@@ -138,7 +138,10 @@ with st.expander("Benefite Tag and Sticker", expanded=True):
         if benefite_label.is_auto_size_type(sticker_type):
             # one checkbox — the right variant is picked per-row automatically
             # by matching each row's Sizes against the available filenames
-            checked = st.checkbox(sticker_type, key=f"chk_benefite_{sticker_type}")
+            col1, col2 = st.columns([2, 2])
+            checked = col1.checkbox(sticker_type, key=f"chk_benefite_{sticker_type}")
+            with col2:
+                theme.render_badge("Auto size")
             if checked:
                 label_options[sticker_type] = {
                     "generate": lambda rows, st_=sticker_type: benefite_label.generate_batch_auto_size(rows, st_),
@@ -202,6 +205,7 @@ with st.expander("Size Tag", expanded=False):
 
 # ---- Section 3: Hangtag (UI ONLY — not wired up yet) ----
 with st.expander("Hangtag", expanded=False):
+    theme.render_badge("Coming soon", muted=True)
     c1, c2, c3, c4 = st.columns(4)
     c1.text_input("Enter Composition", key="hangtag_composition", disabled=True)
     c2.text_input("Enter Price", key="hangtag_price", disabled=True)
@@ -210,6 +214,7 @@ with st.expander("Hangtag", expanded=False):
 
 # ---- Section 4: Care Label (UI ONLY — not wired up yet) ----
 with st.expander("Care Label", expanded=False):
+    theme.render_badge("Coming soon", muted=True)
     c1, c2 = st.columns(2)
     c1.text_input("Enter Composition", key="care_composition", disabled=True)
     c2.selectbox("Select Washing Code", [""], key="care_washing", disabled=True)
@@ -233,8 +238,6 @@ if selected_labels and st.button("Generate Selected Labels", type="primary"):
 
                 zip_file.writestr(final_filename, pdf_bytes)
         zip_buffer.seek(0)
-
-    st.success(f"Done! {len(selected_labels)} label type(s) generated and packaged in a ZIP file.")
 
     # ZIP filename = Supplier_product_code value
     supplier_code = str(filename_row.get("Supplier_product_code", "UNKNOWN")).strip() or "UNKNOWN"
