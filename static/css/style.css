@@ -324,3 +324,209 @@ div[data-testid="stFormSubmitButton"] button:hover {
     .footer-text { color: rgba(0,0,0,0.6) !important; }
     .footer-border { border-top: 1px solid rgba(102,126,234,0.3) !important; background: rgba(255,255,255,0.5) !important; }
 }
+
+
+/* ============================================================
+   PEPCO Label Automation — visual design update
+   Paste this at the END of static/css/style.css
+   Brand accent stays #667eea (same as your existing theme.py)
+   ============================================================ */
+
+/* ---------- 1. File uploader -> dashed indigo dropzone ---------- */
+[data-testid="stFileUploaderDropzone"] {
+    border: 1.5px dashed #667eea !important;
+    background: rgba(102, 126, 234, 0.06) !important;
+    border-radius: 12px !important;
+    transition: background 0.15s ease;
+}
+[data-testid="stFileUploaderDropzone"]:hover {
+    background: rgba(102, 126, 234, 0.1) !important;
+}
+[data-testid="stFileUploaderDropzone"] svg {
+    fill: #667eea !important;
+}
+
+/* ---------- 2. Data editor / correction table -> zebra rows ---------- */
+[data-testid="stDataFrame"] div[role="row"]:nth-child(even),
+[data-testid="stDataEditor"] div[role="row"]:nth-child(even) {
+    background: rgba(102, 126, 234, 0.04) !important;
+}
+[data-testid="stDataFrame"] div[role="columnheader"],
+[data-testid="stDataEditor"] div[role="columnheader"] {
+    font-weight: 500 !important;
+    color: #667eea !important;
+    background: rgba(102, 126, 234, 0.08) !important;
+}
+
+/* ---------- 3. Expander headers (label type sections) ---------- */
+[data-testid="stExpander"] summary,
+.streamlit-expanderHeader {
+    border-radius: 12px !important;
+    border: 0.5px solid rgba(102, 126, 234, 0.25) !important;
+    font-weight: 500 !important;
+}
+[data-testid="stExpander"] summary:hover {
+    background: rgba(102, 126, 234, 0.06) !important;
+}
+
+/* ---------- 4. Checkbox accent color (match indigo) ---------- */
+input[type="checkbox"] {
+    accent-color: #667eea !important;
+}
+
+/* ---------- 5. Badge / chip (use with render_badge() below) ---------- */
+.pepco-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 8px;
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    margin-left: 8px;
+}
+.pepco-badge.muted {
+    background: rgba(120, 120, 120, 0.12);
+    color: #888888;
+}
+
+/* ---------- 6. Step indicator (use with render_steps() below) ---------- */
+.pepco-steps {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    margin-bottom: 14px;
+}
+.pepco-step-circle {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0.5px solid rgba(120, 120, 120, 0.3);
+    color: #888888;
+}
+.pepco-step-circle.active {
+    background: #667eea;
+    color: #ffffff;
+    border: none;
+}
+
+/* ---------- 7. Primary action buttons (Generate / Download) ---------- */
+div[data-testid="stButton"] > button[kind="primary"],
+div[data-testid="stFormSubmitButton"] button[kind="primary"] {
+    background: #667eea !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 8px !important;
+}
+div[data-testid="stButton"] > button[kind="primary"]:hover {
+    background: #5568d3 !important;
+}
+
+/* ---------- 8. Labeled pill-tab progress bar (render_progress_tabs) ---------- */
+.pepco-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+.pepco-tab {
+    flex: 1;
+    min-width: 140px;
+    text-align: center;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(120, 120, 120, 0.25);
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 14px;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.02);
+}
+.pepco-tab.active {
+    border: 1.5px solid #667eea;
+    color: #8b93f8;
+    background: rgba(102, 126, 234, 0.1);
+}
+
+/* ---------- 9. Bigger, friendlier upload dropzone ---------- */
+[data-testid="stFileUploaderDropzone"] {
+    padding: 2rem 1rem !important;
+    text-align: center !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] svg {
+    width: 32px !important;
+    height: 32px !important;
+    fill: #667eea !important;
+    margin-bottom: 4px;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] span {
+    font-size: 14px !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] small {
+    font-size: 12px !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* ---------- 10. Compact stage line (render_stage_line) ---------- */
+.pepco-stage-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.pepco-dots {
+    display: flex;
+    align-items: center;
+}
+.pepco-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(120, 120, 120, 0.35);
+    display: inline-block;
+}
+.pepco-dot.done {
+    background: #667eea;
+}
+.pepco-dot.current {
+    background: #8b93f8;
+    width: 9px;
+    height: 9px;
+}
+.pepco-dot-line {
+    width: 16px;
+    height: 1px;
+    background: rgba(120, 120, 120, 0.35);
+    display: inline-block;
+}
+.pepco-dot-line.done {
+    background: #667eea;
+}
+.pepco-stage-text {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* ---------- 11. Big centered stage banner (render_stage_banner) ---------- */
+.pepco-stage-banner {
+    width: 100%;
+    text-align: center;
+    padding: 20px 16px;
+    margin-bottom: 20px;
+    border-radius: 14px;
+    border: 2px solid #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    color: #ffffff;
+    font-size: 26px;
+    font-weight: 700;
+}
