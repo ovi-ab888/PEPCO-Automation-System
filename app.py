@@ -146,6 +146,10 @@ with st.expander("Benefite Tag and Sticker", expanded=True):
                 theme.render_badge("Auto size")
 
             if checked:
+                for r in corrected_df.to_dict(orient="records"):
+                    picked = benefite_label.pick_variant_for_row(sticker_type, r)
+                    st.caption(f"[{sticker_type}] Sizes: {r.get('Sizes')} → picked: {picked}")
+
                 label_options[sticker_type] = {
                     "generate": lambda rows, st_=sticker_type: benefite_label.generate_batch_auto_size(rows, st_),
                     "template_path": None,
@@ -153,11 +157,6 @@ with st.expander("Benefite Tag and Sticker", expanded=True):
                 }
                 selected_labels.append(sticker_type)
             continue
-
-        variants = benefite_label.list_variants(sticker_type)
-        if not variants:
-            continue
-
         col1, col2 = st.columns([2, 2])
         checked = col1.checkbox(sticker_type, key=f"chk_benefite_{sticker_type}")
 
