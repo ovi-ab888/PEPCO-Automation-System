@@ -25,12 +25,18 @@ right in the filename, using -, : or / as the separator, e.g.:
     templates/Benefite/KVI Size Sticker/KVI_Size_Sticker 3:4, 4:5, 5:6.pdf
     templates/Benefite/Utag/Utag  0:3, 3:6, 6:9, 9:12, 12:18.pdf
 For these, no manual variant dropdown is shown — generate_batch_auto_size()
-picks the right file PER ROW by checking whether any of that row's
-(comma-separated) Sizes values falls inside one of the numeric ranges
-encoded in the filename (or, for plain non-range filenames like
-"S, M, L, XL.pdf", by literal substring match). This means a single
-checkbox in the UI can correctly cover rows with different Sizes each,
-without the user choosing anything extra.
+picks the right file PER ROW:
+  - If the row's own Sizes are themselves ranges (e.g. "3/4, 4/5"), they
+    are matched EXACTLY against a filename's encoded ranges — this avoids
+    false ties between overlapping wide-range files (e.g. a file covering
+    "0:0, 0:3, 3:6...12:18" numerically overlaps "3:4, 4:5...8:9" too, so
+    exact range matching is needed, not just "does this number fall
+    inside this range").
+  - Otherwise (plain sizes like "9, 10, S, M"), falls back to checking
+    whether each size number falls inside one of the filename's ranges,
+    or a literal substring match for non-range filenames.
+This means a single checkbox in the UI can correctly cover rows with
+different Sizes each, without the user choosing anything extra.
 
 Folders using this behaviour are listed in AUTO_SIZE_TYPES below — add a
 type name there when its variant filenames encode sizes this way.
@@ -117,12 +123,15 @@ def _leading_number(token: str):
 
 def pick_variant_for_row(sticker_type: str, row: dict) -> str:
     """For AUTO_SIZE_TYPES: finds the variant filename that best matches
-    this row's Sizes value(s) — scores each variant by how many of the
-    row's sizes numerically fall inside any of that filename's ranges
-    (handles multiple ranges per filename, any separator: -, :, /).
-    Falls back to a literal substring check for plain (non-range)
-    filenames like "S, M, L, XL.pdf". Falls back to the first available
-    variant if nothing scores above zero, or Sizes is blank."""
+    this row's Sizes value(s).
+    - If the row's size tokens are themselves ranges (e.g. "3/4, 4/5"),
+      match them EXACTLY against the filename's encoded ranges — this
+      avoids false ties between overlapping wide-range files.
+    - Otherwise (plain sizes like "9, 10, S, M"), fall back to checking
+      whether each size number falls inside one of the filename's ranges,
+      or a literal substring match for non-range filenames.
+    Falls back to the first available variant if nothing scores above
+    zero, or Sizes is blank."""
     variants = list_variants(sticker_type)
     if not variants:
         return None
@@ -132,16 +141,24 @@ def pick_variant_for_row(sticker_type: str, row: dict) -> str:
         return variants[0]
 
     size_tokens = [s.strip() for s in sizes_str.split(",") if s.strip()]
-    size_numbers = [n for n in (_leading_number(t) for t in size_tokens) if n is not None]
+
+    # try to parse each token as a range itself, e.g. "3/4" -> (3, 4)
+    row_ranges = []
+    for tok in size_tokens:
+        m = re.match(r"^(\d+)\s*[:/-]\s*(\d+)$", tok)
+        if m:
+            row_ranges.append((int(m.group(1)), int(m.group(2))))
 
     best_variant, best_score = None, -1
     for variant in variants:
-        ranges = _extract_ranges(variant)
-        if ranges and size_numbers:
-            score = sum(1 for n in size_numbers if any(lo <= n <= hi for lo, hi in ranges))
+        file_ranges = _extract_ranges(variant)
+        if row_ranges and file_ranges:
+            # exact range-to-range match — most precise, avoids ties
+            score = sum(1 for r in row_ranges if r in file_ranges)
+        elif file_ranges:
+            size_numbers = [n for n in (_leading_number(t) for t in size_tokens) if n is not None]
+            score = sum(1 for n in size_numbers if any(lo <= n <= hi for lo, hi in file_ranges))
         else:
-            # no numeric range in the filename — fall back to a literal
-            # substring check against the whole tokens
             score = sum(1 for tok in size_tokens if tok.lower() in variant.lower())
         if score > best_score:
             best_score, best_variant = score, variant
