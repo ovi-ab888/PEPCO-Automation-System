@@ -122,16 +122,6 @@ def _leading_number(token: str):
 
 
 def pick_variant_for_row(sticker_type: str, row: dict) -> str:
-    """For AUTO_SIZE_TYPES: finds the variant filename that best matches
-    this row's Sizes value(s).
-    - If the row's size tokens are themselves ranges (e.g. "3/4, 4/5"),
-      match them EXACTLY against the filename's encoded ranges — this
-      avoids false ties between overlapping wide-range files.
-    - Otherwise (plain sizes like "9, 10, S, M"), fall back to checking
-      whether each size number falls inside one of the filename's ranges,
-      or a literal substring match for non-range filenames.
-    Falls back to the first available variant if nothing scores above
-    zero, or Sizes is blank."""
     variants = list_variants(sticker_type)
     if not variants:
         return None
@@ -142,29 +132,33 @@ def pick_variant_for_row(sticker_type: str, row: dict) -> str:
 
     size_tokens = [s.strip() for s in sizes_str.split(",") if s.strip()]
 
-    # try to parse each token as a range itself, e.g. "3/4" -> (3, 4)
     row_ranges = []
     for tok in size_tokens:
         m = re.match(r"^(\d+)\s*[:/-]\s*(\d+)$", tok)
         if m:
             row_ranges.append((int(m.group(1)), int(m.group(2))))
 
-    best_variant, best_score = None, -1
+    best_variant, best_key = None, None
     for variant in variants:
         file_ranges = _extract_ranges(variant)
         if row_ranges and file_ranges:
-            # exact range-to-range match — most precise, avoids ties
-            score = sum(1 for r in row_ranges if r in file_ranges)
+            matches = sum(1 for r in row_ranges if r in file_ranges)
+            # prefer more matches, then FEWER extra ranges in the file
+            # (an exact-size file beats a wider superset file that also
+            # happens to contain all the same ranges)
+            key = (matches, -abs(len(file_ranges) - len(row_ranges)))
         elif file_ranges:
             size_numbers = [n for n in (_leading_number(t) for t in size_tokens) if n is not None]
-            score = sum(1 for n in size_numbers if any(lo <= n <= hi for lo, hi in file_ranges))
+            matches = sum(1 for n in size_numbers if any(lo <= n <= hi for lo, hi in file_ranges))
+            key = (matches, -abs(len(file_ranges) - len(size_numbers)))
         else:
-            score = sum(1 for tok in size_tokens if tok.lower() in variant.lower())
-        if score > best_score:
-            best_score, best_variant = score, variant
+            matches = sum(1 for tok in size_tokens if tok.lower() in variant.lower())
+            key = (matches, 0)
 
-    return best_variant if best_score > 0 else variants[0]
+        if best_key is None or key > best_key:
+            best_key, best_variant = key, variant
 
+    return best_variant if best_key and best_key[0] > 0 else variants[0]
 
 def load_field_config() -> list:
     with open(CONFIG_PATH, "r") as f:
