@@ -168,6 +168,10 @@ with st.expander("Benefite Tag and Sticker", expanded=True):
             )
         else:
             sel_variant = variants[0]
+        if checked:
+           for r in corrected_df.to_dict(orient="records"):
+               picked = benefite_label.pick_variant_for_row(sticker_type, r)
+               st.caption(f"[{sticker_type}] Sizes: {r.get('Sizes')} → picked: {picked}")
 
         if checked:
             template_path = benefite_label.get_template_path(sticker_type, sel_variant)
