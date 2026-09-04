@@ -104,26 +104,13 @@ def is_auto_size_type(sticker_type: str) -> bool:
 import re
 
 
-def _extract_range(text: str):
-    """Finds a 'NNN-NNN' range in text, e.g. '104-134' -> (104, 134)."""
-    m = re.search(r"(\d+)\s*-\s*(\d+)", text)
-    if m:
-        return int(m.group(1)), int(m.group(2))
-    return None
-
-
-def _leading_number(token: str):
-    m = re.search(r"\d+", token)
-    return int(m.group()) if m else None
+def _extract_ranges(text: str):
+    """Finds ALL numeric ranges in text, any separator (-, :, /).
+    e.g. '0:3, 3:6, 6:9' -> [(0,3), (3,6), (6,9)]"""
+    return [(int(a), int(b)) for a, b in re.findall(r"(\d+)\s*[:/-]\s*(\d+)", text)]
 
 
 def pick_variant_for_row(sticker_type: str, row: dict) -> str:
-    """For AUTO_SIZE_TYPES: finds the variant filename that best matches
-    this row's Sizes value(s) — scores each variant by how many of the
-    row's sizes numerically fall inside that filename's NNN-NNN range
-    (not a raw substring check, since e.g. the token "134" is also a
-    substring of the unrelated range "104-134"). Falls back to the first
-    available variant if nothing scores above zero, or Sizes is blank."""
     variants = list_variants(sticker_type)
     if not variants:
         return None
@@ -137,19 +124,15 @@ def pick_variant_for_row(sticker_type: str, row: dict) -> str:
 
     best_variant, best_score = None, -1
     for variant in variants:
-        rng = _extract_range(variant)
-        if rng and size_numbers:
-            lo, hi = rng
-            score = sum(1 for n in size_numbers if lo <= n <= hi)
+        ranges = _extract_ranges(variant)
+        if ranges and size_numbers:
+            score = sum(1 for n in size_numbers if any(lo <= n <= hi for lo, hi in ranges))
         else:
-            # no numeric range in the filename — fall back to a literal
-            # substring check against the whole tokens
             score = sum(1 for tok in size_tokens if tok.lower() in variant.lower())
         if score > best_score:
             best_score, best_variant = score, variant
 
     return best_variant if best_score > 0 else variants[0]
-
 
 def load_field_config() -> list:
     with open(CONFIG_PATH, "r") as f:
