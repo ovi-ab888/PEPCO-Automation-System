@@ -142,6 +142,11 @@ with st.expander("Benefite Tag and Sticker", expanded=True):
             checked = col1.checkbox(sticker_type, key=f"chk_benefite_{sticker_type}")
             with col2:
                 theme.render_badge("Auto size")
+            if checked and sticker_type == "Utag":
+                for r in corrected_df.to_dict(orient="records"):
+                    picked = benefite_label.pick_variant_for_row(sticker_type, r)
+                    st.caption(f"Sizes: {r.get('Sizes')} → picked: {picked}")
+        
             if checked:
                 label_options[sticker_type] = {
                     "generate": lambda rows, st_=sticker_type: benefite_label.generate_batch_auto_size(rows, st_),
