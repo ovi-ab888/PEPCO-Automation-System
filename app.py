@@ -162,13 +162,6 @@ with st.expander("Benefite Tag and Sticker", expanded=True):
 
         col1, col2 = st.columns([2, 2])
         checked = col1.checkbox(sticker_type, key=f"chk_benefite_{sticker_type}")
-        if len(variants) > 1:
-            sel_variant = col2.selectbox(
-                "Select variant", variants,
-                key=f"benefite_variant_{sticker_type}", label_visibility="collapsed",
-            )
-        else:
-            sel_variant = variants[0]
 
         if checked:
             template_path = benefite_label.get_template_path(sticker_type, sel_variant)
