@@ -20,13 +20,15 @@ stays its own separate, standalone item (labels/pad_label.py), not scanned
 here.
 
 --- Auto-select-by-Sizes folders (KVI Size Sticker, Utag, ...) ---
-Some folders hold one PDF per size-range family, with the range encoded
-right in the filename, e.g.:
-    templates/Benefite/KVI Size Sticker/KVI Size Sticker 104-134.pdf
-    templates/Benefite/Utag/Utag 134-170.pdf
+Some folders hold one PDF per size-range family, with the range(s) encoded
+right in the filename, using -, : or / as the separator, e.g.:
+    templates/Benefite/KVI Size Sticker/KVI_Size_Sticker 3:4, 4:5, 5:6.pdf
+    templates/Benefite/Utag/Utag  0:3, 3:6, 6:9, 9:12, 12:18.pdf
 For these, no manual variant dropdown is shown — generate_batch_auto_size()
 picks the right file PER ROW by checking whether any of that row's
-(comma-separated) Sizes values appears in the filename. This means a single
+(comma-separated) Sizes values falls inside one of the numeric ranges
+encoded in the filename (or, for plain non-range filenames like
+"S, M, L, XL.pdf", by literal substring match). This means a single
 checkbox in the UI can correctly cover rows with different Sizes each,
 without the user choosing anything extra.
 
@@ -38,6 +40,7 @@ Size Tag, so they use config/pad_header_mapping.json too.
 """
 import os
 import json
+import re
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -101,16 +104,25 @@ def is_auto_size_type(sticker_type: str) -> bool:
     return sticker_type in AUTO_SIZE_TYPES
 
 
-import re
-
-
 def _extract_ranges(text: str):
     """Finds ALL numeric ranges in text, any separator (-, :, /).
     e.g. '0:3, 3:6, 6:9' -> [(0,3), (3,6), (6,9)]"""
     return [(int(a), int(b)) for a, b in re.findall(r"(\d+)\s*[:/-]\s*(\d+)", text)]
 
 
+def _leading_number(token: str):
+    m = re.search(r"\d+", token)
+    return int(m.group()) if m else None
+
+
 def pick_variant_for_row(sticker_type: str, row: dict) -> str:
+    """For AUTO_SIZE_TYPES: finds the variant filename that best matches
+    this row's Sizes value(s) — scores each variant by how many of the
+    row's sizes numerically fall inside any of that filename's ranges
+    (handles multiple ranges per filename, any separator: -, :, /).
+    Falls back to a literal substring check for plain (non-range)
+    filenames like "S, M, L, XL.pdf". Falls back to the first available
+    variant if nothing scores above zero, or Sizes is blank."""
     variants = list_variants(sticker_type)
     if not variants:
         return None
@@ -128,11 +140,14 @@ def pick_variant_for_row(sticker_type: str, row: dict) -> str:
         if ranges and size_numbers:
             score = sum(1 for n in size_numbers if any(lo <= n <= hi for lo, hi in ranges))
         else:
+            # no numeric range in the filename — fall back to a literal
+            # substring check against the whole tokens
             score = sum(1 for tok in size_tokens if tok.lower() in variant.lower())
         if score > best_score:
             best_score, best_variant = score, variant
 
     return best_variant if best_score > 0 else variants[0]
+
 
 def load_field_config() -> list:
     with open(CONFIG_PATH, "r") as f:
