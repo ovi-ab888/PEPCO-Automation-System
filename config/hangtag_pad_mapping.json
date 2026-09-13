@@ -133,7 +133,7 @@
     }
   ],
   "back_size_label": {
-    "y": 100,
+    "y": 200,
     "font_size": 10,
     "font": "tahoma",
     "prefix": "Size: ",
