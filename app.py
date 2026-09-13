@@ -208,8 +208,6 @@ with st.expander("Size Tag", expanded=False):
 # CSV upload here — but "Generate Hangtag" still joins the same
 # selected_labels / ZIP / "Generate Selected Labels" flow as everything else.
 with st.expander("Hangtag", expanded=False):
-    st.caption("Upload the Hangtag data CSV (Order_ID, Style, Colour, product_name, prices, "
-               "Collection, Colour_SKU, Batch, barcode, washing_code, Cotton, ...).")
     hangtag_csv = st.file_uploader("Hangtag Data CSV", type=["csv"], key="hangtag_csv_uploader")
 
     hangtag_rows = None
@@ -221,21 +219,14 @@ with st.expander("Hangtag", expanded=False):
             hangtag_df = None
 
         if hangtag_df is not None and not hangtag_df.empty:
-            st.success(f"{len(hangtag_df)} ta row load hoise.")
             hangtag_edited_df = st.data_editor(
                 hangtag_df, use_container_width=True, num_rows="fixed", key="hangtag_data_editor"
             )
             hangtag_rows = hangtag_edited_df.fillna("").to_dict(orient="records")
 
-            hangtag_groups = hangtag_pad.group_rows_for_pads(hangtag_rows)
-            back_slots = len(hangtag_pad.load_mapping()["back_rects"])
-            st.caption(f"{len(hangtag_rows)} ta row → {len(hangtag_groups)} ta Pad-e group hoise "
-                       f"(same product/price -> ekshathe, protita Pad-e max {back_slots} ta unit).")
-
             hangtag_designer = st.text_input(
-                "Designer name (Pad header-e boshbe)",
-                value=auth.get_display_name(),
-                key="hangtag_designer_input",
+                "Designer", placeholder="Designer name", label_visibility="collapsed",
+                value=auth.get_display_name(), key="hangtag_designer_input",
             )
             for r in hangtag_rows:
                 r["Designer"] = hangtag_designer
