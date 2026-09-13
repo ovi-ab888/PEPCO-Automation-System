@@ -215,7 +215,7 @@ with st.expander("Hangtag", expanded=False):
     hangtag_rows = None
     if hangtag_csv is not None:
         try:
-            hangtag_df = pd.read_csv(hangtag_csv)
+            hangtag_df = pd.read_csv(hangtag_csv, sep=None, engine="python", encoding="utf-8-sig")
         except Exception as e:
             st.error(f"CSV porte giye error: {e}")
             hangtag_df = None
