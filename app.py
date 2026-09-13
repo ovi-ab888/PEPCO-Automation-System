@@ -232,6 +232,14 @@ with st.expander("Hangtag", expanded=False):
             st.caption(f"{len(hangtag_rows)} ta row → {len(hangtag_groups)} ta Pad-e group hoise "
                        f"(same product/price -> ekshathe, protita Pad-e max {back_slots} ta unit).")
 
+            hangtag_designer = st.text_input(
+                "Designer name (Pad header-e boshbe)",
+                value=auth.get_display_name(),
+                key="hangtag_designer_input",
+            )
+            for r in hangtag_rows:
+                r["Designer"] = hangtag_designer
+
     include_hangtag = st.checkbox("Generate Hangtag", key="chk_hangtag", disabled=not hangtag_rows)
     if include_hangtag and hangtag_rows:
         label_options["Hangtag"] = {
