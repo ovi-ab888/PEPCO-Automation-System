@@ -173,11 +173,28 @@ def generate_pad_for_group(group_rows, template_path=TEMPLATE_PATH, config_path=
     pad_page.show_pdf_page(fitz.Rect(mapping["front_rect"]), front_src, 0)
     front_src.close()
 
+    size_cfg = mapping.get("back_size_label")
+    tahoma_path = os.path.join(BASE_DIR, "fonts", "Tahoma.ttf")
+    size_fontname = "helv"
+    if size_cfg and os.path.exists(tahoma_path):
+        pad_page.insert_font(fontfile=tahoma_path, fontname="tahoma_size")
+        size_fontname = "tahoma_size"
+
     for rect_coords, unit_row in zip(mapping["back_rects"], group_rows):
         back_bytes = hb.generate_single(unit_row)
         back_src = fitz.open("pdf", back_bytes)
         pad_page.show_pdf_page(fitz.Rect(rect_coords), back_src, 0)
         back_src.close()
+
+        if size_cfg:
+            size_value = str(unit_row.get(size_cfg.get("source_column", "Sizes"), "")).strip()
+            if size_value and size_value.lower() != "nan":
+                text = f"{size_cfg.get('prefix', 'Size: ')}{size_value}"
+                fs = size_cfg["font_size"]
+                x_center = (rect_coords[0] + rect_coords[2]) / 2
+                tw = fitz.get_text_length(text, fontname=size_fontname, fontsize=fs)
+                x = x_center - tw / 2 if size_cfg.get("align", "center") == "center" else rect_coords[0]
+                pad_page.insert_text((x, size_cfg["y"]), text, fontsize=fs, fontname=size_fontname, color=BLACK)
     # Remaining back_rects (if group has < 7 rows) are simply left blank —
     # the template's own empty box shows there, matching a partial pad.
 
