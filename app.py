@@ -7,6 +7,7 @@ import pandas as pd
 import io
 import json
 import zipfile
+from datetime import datetime
 
 import theme
 import auth
@@ -29,6 +30,7 @@ import labels.inner_label as inner_label
 import labels.outer_label as outer_label
 import labels.benefite as benefite_label
 import labels.size_tag as size_tag_label
+import labels.hangtag_pad as hangtag_pad  # <-- NEW: Hangtag (Front+Back+Pad, self-contained CSV flow)
 import extractor
 
 theme.main_header("PEPCO Label Automation", "Upload PEPCO order/PO PDF and generate labels effortlessly.")
@@ -39,13 +41,14 @@ theme.main_header("PEPCO Label Automation", "Upload PEPCO order/PO PDF and gener
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
 
+
 def _reset_all():
     for k in list(st.session_state.keys()):
         if k.startswith(("pdf_", "chk_", "size_tag_", "include_size_tag", "hangtag_", "care_", "benefite_")):
             st.session_state.pop(k, None)
     st.session_state.uploader_key += 1
 
-theme.render_stage_banner(1, ["Upload / Extract", "Review", "Select & generate"])
+
 st.button("Upload New File", on_click=_reset_all)
 
 pdf_files = st.file_uploader(
@@ -54,7 +57,6 @@ pdf_files = st.file_uploader(
     accept_multiple_files=True,
     key=f"pdf_uploader_{st.session_state.uploader_key}",
 )
-
 if not pdf_files:
     st.info("Please upload a PDF to continue.")
     st.stop()
@@ -68,13 +70,10 @@ if (
 ):
     with st.spinner("Extracting data from PDF..."):
         extracted_df = extractor.extract_rows_from_pdfs(pdf_files)
-
     if extracted_df.empty:
         st.error("Couldn't extract data from this PDF — check it's the right file type.")
         st.stop()
-
     extracted_df["Designer"] = auth.get_display_name()  # from the logged-in user, editable below
-
     st.session_state["pdf_filename_row"] = extracted_df.iloc[0].to_dict()
     st.session_state["pdf_extracted_df"] = extracted_df.drop(columns=["_temp_sku_for_filename"])
     st.session_state["pdf_uploader_names"] = [f.name for f in pdf_files]
@@ -82,8 +81,8 @@ if (
 # -------------------------------
 # 3. ডেটা এডিটর
 # -------------------------------
-theme.render_stage_banner(2, ["Upload / Extract", "Review", "Select & generate"])
-
+st.subheader("Review & correct extracted data")
+st.caption("Every field is editable — fix anything the extractor got wrong.")
 corrected_df = st.data_editor(
     st.session_state["pdf_extracted_df"],
     use_container_width=True,
@@ -94,11 +93,11 @@ corrected_df = st.data_editor(
 # -------------------------------
 # 4. লেবেল টাইপ সিলেক্ট ও জেনারেশন
 # -------------------------------
-theme.render_stage_banner(3, ["Upload / Extract", "Review", "Select & generate"])
+st.subheader("Select Label Types to Generate")
 
 # name -> {"generate": callable(rows) -> pdf_bytes,
-#          "template_path": str or None,  (used to derive the filename's template-name part)
-#          "template_name": str or None}  (explicit override, e.g. for auto-size types with no single path)
+#          "template_path": str or None,   (used to derive the filename's template-name part)
+#          "template_name": str or None}   (explicit override, e.g. for auto-size types with no single path)
 label_options = {
     "Inner & Outer Sticker": {
         "generate": pad_label.generate_batch,
@@ -113,6 +112,7 @@ try:
 except FileNotFoundError:
     FILENAME_MAPPING = {}
 
+
 def _template_name_for(entry: dict) -> str:
     """The name to use in the download filename for this label type.
     Checks config/filename_mapping.json first (template filename / sticker
@@ -125,6 +125,7 @@ def _template_name_for(entry: dict) -> str:
         raw_name = os.path.splitext(os.path.basename(path))[0] if path else "Sticker"
     return FILENAME_MAPPING.get(raw_name, raw_name)
 
+
 selected_labels = []
 
 # ---- Section 1: Benefite Tag and Sticker (LIVE) ----
@@ -135,21 +136,12 @@ with st.expander("Benefite Tag and Sticker", expanded=True):
     sticker_types = benefite_label.list_sticker_types()
     if not sticker_types:
         st.caption("No other Benefite templates found yet in templates/Benefite/.")
-
     for sticker_type in sticker_types:
         if benefite_label.is_auto_size_type(sticker_type):
             # one checkbox — the right variant is picked per-row automatically
             # by matching each row's Sizes against the available filenames
-            col1, col2 = st.columns([2, 2])
-            checked = col1.checkbox(sticker_type, key=f"chk_benefite_{sticker_type}")
-            with col2:
-                theme.render_badge("Auto size")
-
+            checked = st.checkbox(sticker_type, key=f"chk_benefite_{sticker_type}")
             if checked:
-                for r in corrected_df.to_dict(orient="records"):
-                    picked = benefite_label.pick_variant_for_row(sticker_type, r)
-                    st.caption(f"[{sticker_type}] Sizes: {r.get('Sizes')} → picked: {picked}")
-
                 label_options[sticker_type] = {
                     "generate": lambda rows, st_=sticker_type: benefite_label.generate_batch_auto_size(rows, st_),
                     "template_path": None,
@@ -164,7 +156,6 @@ with st.expander("Benefite Tag and Sticker", expanded=True):
 
         col1, col2 = st.columns([2, 2])
         checked = col1.checkbox(sticker_type, key=f"chk_benefite_{sticker_type}")
-
         if len(variants) > 1:
             sel_variant = col2.selectbox(
                 "Select variant", variants,
@@ -189,6 +180,7 @@ with st.expander("Size Tag", expanded=False):
         st.caption("No Size Tag templates found yet in templates/Sizetag/.")
     else:
         c1, c2, c3, c4 = st.columns(4)
+
         sel_type = c1.selectbox("Select Type", size_types, key="size_tag_type")
 
         departments = size_tag_label.list_departments(sel_type) if sel_type else []
@@ -201,7 +193,6 @@ with st.expander("Size Tag", expanded=False):
         sel_size = c4.selectbox("Select Size", sizes, key="size_tag_size") if sizes else None
 
         include_size_tag = st.checkbox("Generate Size Tag", key="include_size_tag", disabled=not sel_size)
-
         if include_size_tag and sel_size:
             template_path = size_tag_label.get_template_path(sel_type, sel_dept, sel_cust, sel_size)
             size_tag_key = f"Size Tag ({sel_type}/{sel_dept}/{sel_cust}/{sel_size})"
@@ -211,25 +202,8 @@ with st.expander("Size Tag", expanded=False):
             }
             selected_labels.append(size_tag_key)
 
-# ---- Section 3: Hangtag (UI ONLY — not wired up yet) ----
-with st.expander("Hangtag", expanded=False):
-    theme.render_badge("Coming soon", muted=True)
-    c1, c2, c3, c4 = st.columns(4)
-    c1.text_input("Enter Composition", key="hangtag_composition", disabled=True)
-    c2.text_input("Enter Price", key="hangtag_price", disabled=True)
-    c3.selectbox("Select Washing Code", [""], key="hangtag_washing", disabled=True)
-    c4.selectbox("Select Product Type", [""], key="hangtag_product_type", disabled=True)
-
-# ---- Section 4: Care Label (UI ONLY — not wired up yet) ----
-with st.expander("Care Label", expanded=False):
-    theme.render_badge("Coming soon", muted=True)
-    c1, c2 = st.columns(2)
-    c1.text_input("Enter Composition", key="care_composition", disabled=True)
-    c2.selectbox("Select Washing Code", [""], key="care_washing", disabled=True)
-
 if selected_labels and st.button("Generate Selected Labels", type="primary"):
     rows = corrected_df.to_dict(orient="records")
-
     filename_row = dict(st.session_state.get("pdf_filename_row", {}))
     filename_row.update(rows[0])
 
@@ -244,9 +218,11 @@ if selected_labels and st.button("Generate Selected Labels", type="primary"):
                 final_filename = extractor.build_filename(
                     filename_row, extension="pdf", template_name=template_name
                 )
-                zip_file.writestr(final_filename, pdf_bytes)
 
+                zip_file.writestr(final_filename, pdf_bytes)
         zip_buffer.seek(0)
+
+    st.success(f"Done! {len(selected_labels)} label type(s) generated and packaged in a ZIP file.")
 
     # ZIP filename = Supplier_product_code value
     supplier_code = str(filename_row.get("Supplier_product_code", "UNKNOWN")).strip() or "UNKNOWN"
@@ -259,6 +235,72 @@ if selected_labels and st.button("Generate Selected Labels", type="primary"):
         mime="application/zip",
         use_container_width=True,
     )
+
+# ---- Section 3: Hangtag (LIVE — self-contained: own CSV upload + Pad download) ----
+# Hangtag needs richer per-row data (product_name in 21 languages, price
+# ladder, Collection, Colour_SKU, Batch, barcode, washing_code, Cotton)
+# that the shared PDF extractor above doesn't produce, so it has its own
+# CSV-driven flow here instead of using `corrected_df` / the ZIP button.
+with st.expander("Hangtag", expanded=False):
+    st.caption("Upload the Hangtag data CSV (Order_ID, Style, Colour, product_name, prices, "
+               "Collection, Colour_SKU, Batch, barcode, washing_code, Cotton, ...).")
+    hangtag_csv = st.file_uploader("Hangtag Data CSV", type=["csv"], key="hangtag_csv_uploader")
+
+    if hangtag_csv is not None:
+        try:
+            hangtag_df = pd.read_csv(hangtag_csv)
+        except Exception as e:
+            st.error(f"CSV porte giye error: {e}")
+            hangtag_df = None
+
+        if hangtag_df is not None and not hangtag_df.empty:
+            st.success(f"{len(hangtag_df)} ta row load hoise.")
+            hangtag_edited_df = st.data_editor(
+                hangtag_df, use_container_width=True, num_rows="fixed", key="hangtag_data_editor"
+            )
+            hangtag_rows = hangtag_edited_df.fillna("").to_dict(orient="records")
+
+            hangtag_groups = hangtag_pad.group_rows_for_pads(hangtag_rows)
+            back_slots = len(hangtag_pad.load_mapping()["back_rects"])
+            st.caption(f"{len(hangtag_rows)} ta row → {len(hangtag_groups)} ta Pad-e group hoise "
+                       f"(same product/price -> ekshathe, protita Pad-e max {back_slots} ta unit).")
+
+            hcol1, hcol2 = st.columns(2)
+            with hcol1:
+                if st.button("📄 Download Hangtag Pad — combined PDF", key="hangtag_combined_btn"):
+                    try:
+                        hangtag_pdf_bytes = hangtag_pad.generate_batch_pdf(hangtag_rows)
+                        hangtag_fname = (
+                            f"Hangtag_Pad_{hangtag_rows[0].get('Order_ID','batch')}_"
+                            f"{datetime.today().strftime('%d%m%Y')}.pdf"
+                        )
+                        st.download_button(
+                            "⬇️ Download PDF", data=hangtag_pdf_bytes, file_name=hangtag_fname,
+                            mime="application/pdf", key="hangtag_combined_dl",
+                        )
+                    except FileNotFoundError as e:
+                        st.error(f"Template/font file paoa jayni: {e}")
+                    except Exception as e:
+                        st.error(f"Generate korte giye error: {e}")
+            with hcol2:
+                if st.button("📑 Download Hangtag Pad — separate PDF per Pad", key="hangtag_separate_btn"):
+                    try:
+                        hangtag_pdfs = hangtag_pad.generate_batch(hangtag_rows)
+                        st.success(f"{len(hangtag_pdfs)} ta Pad PDF ready.")
+                        for i, pdf_bytes in enumerate(hangtag_pdfs, start=1):
+                            fname = f"Hangtag_Pad_{i}_{datetime.today().strftime('%d%m%Y')}.pdf"
+                            st.download_button(f"⬇️ {fname}", data=pdf_bytes, file_name=fname,
+                                                mime="application/pdf", key=f"hangtag_dl_{i}")
+                    except FileNotFoundError as e:
+                        st.error(f"Template/font file paoa jayni: {e}")
+                    except Exception as e:
+                        st.error(f"Generate korte giye error: {e}")
+
+# ---- Section 4: Care Label (UI ONLY — not wired up yet) ----
+with st.expander("Care Label", expanded=False):
+    c1, c2 = st.columns(2)
+    c1.text_input("Enter Composition", key="care_composition", disabled=True)
+    c2.selectbox("Select Washing Code", [""], key="care_washing", disabled=True)
 
 st.markdown(
     '<div class="footer-border" style="padding:14px 0; text-align:center; margin-top:1rem;">'
