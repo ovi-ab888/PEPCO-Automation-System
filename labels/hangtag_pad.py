@@ -174,6 +174,7 @@ def generate_pad_for_group(group_rows, template_path=TEMPLATE_PATH, config_path=
     front_src.close()
 
     size_cfg = mapping.get("back_size_label")
+    static_label_cfg = mapping.get("back_side_static_label")
     tahoma_path = os.path.join(BASE_DIR, "fonts", "Tahoma.ttf")
     size_fontname = "helv"
     size_font_obj = fitz.Font(fontname="helv")
@@ -181,6 +182,9 @@ def generate_pad_for_group(group_rows, template_path=TEMPLATE_PATH, config_path=
         pad_page.insert_font(fontfile=tahoma_path, fontname="tahoma_size")
         size_fontname = "tahoma_size"
         size_font_obj = fitz.Font(fontfile=tahoma_path)
+
+    static_fontname = "hebo" if (static_label_cfg and static_label_cfg.get("bold")) else "helv"
+    static_font_obj = fitz.Font(fontname=static_fontname)
 
     for rect_coords, unit_row in zip(mapping["back_rects"], group_rows):
         back_bytes = hb.generate_single(unit_row)
@@ -197,6 +201,14 @@ def generate_pad_for_group(group_rows, template_path=TEMPLATE_PATH, config_path=
                 tw = size_font_obj.text_length(text, fontsize=fs)
                 x = x_center - tw / 2 if size_cfg.get("align", "center") == "center" else rect_coords[0]
                 pad_page.insert_text((x, size_cfg["y"]), text, fontsize=fs, fontname=size_fontname, color=BLACK)
+
+        if static_label_cfg:
+            text = static_label_cfg["text"]
+            fs = static_label_cfg["font_size"]
+            x_center = (rect_coords[0] + rect_coords[2]) / 2
+            tw = static_font_obj.text_length(text, fontsize=fs)
+            x = x_center - tw / 2 if static_label_cfg.get("align", "center") == "center" else rect_coords[0]
+            pad_page.insert_text((x, static_label_cfg["y"]), text, fontsize=fs, fontname=static_fontname, color=BLACK)
     # Remaining back_rects (if group has < 7 rows) are simply left blank —
     # the template's own empty box shows there, matching a partial pad.
 
