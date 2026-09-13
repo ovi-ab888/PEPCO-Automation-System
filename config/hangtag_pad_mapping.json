@@ -144,6 +144,7 @@
     "text": "BACK SIDE",
     "y": 217,
     "font_size": 10,
+    "bold": true,
     "align": "center"
   }
 }
