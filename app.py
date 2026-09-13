@@ -7,7 +7,6 @@ import pandas as pd
 import io
 import json
 import zipfile
-from datetime import datetime
 
 import theme
 import auth
@@ -30,7 +29,7 @@ import labels.inner_label as inner_label
 import labels.outer_label as outer_label
 import labels.benefite as benefite_label
 import labels.size_tag as size_tag_label
-import labels.hangtag_pad as hangtag_pad  # <-- NEW: Hangtag (Front+Back+Pad, self-contained CSV flow)
+import labels.hangtag_pad as hangtag_pad  # <-- NEW: Hangtag (Front+Back+Pad, own CSV data)
 import extractor
 
 theme.main_header("PEPCO Label Automation", "Upload PEPCO order/PO PDF and generate labels effortlessly.")
@@ -202,6 +201,52 @@ with st.expander("Size Tag", expanded=False):
             }
             selected_labels.append(size_tag_key)
 
+# ---- Section 3: Hangtag (LIVE — own CSV data, but joins the same ZIP flow) ----
+# Hangtag needs richer per-row data (product_name in 21 languages, price
+# ladder, Collection, Colour_SKU, Batch, barcode, washing_code, Cotton)
+# that the shared PDF extractor above doesn't produce, so it has its own
+# CSV upload here — but "Generate Hangtag" still joins the same
+# selected_labels / ZIP / "Generate Selected Labels" flow as everything else.
+with st.expander("Hangtag", expanded=False):
+    st.caption("Upload the Hangtag data CSV (Order_ID, Style, Colour, product_name, prices, "
+               "Collection, Colour_SKU, Batch, barcode, washing_code, Cotton, ...).")
+    hangtag_csv = st.file_uploader("Hangtag Data CSV", type=["csv"], key="hangtag_csv_uploader")
+
+    hangtag_rows = None
+    if hangtag_csv is not None:
+        try:
+            hangtag_df = pd.read_csv(hangtag_csv)
+        except Exception as e:
+            st.error(f"CSV porte giye error: {e}")
+            hangtag_df = None
+
+        if hangtag_df is not None and not hangtag_df.empty:
+            st.success(f"{len(hangtag_df)} ta row load hoise.")
+            hangtag_edited_df = st.data_editor(
+                hangtag_df, use_container_width=True, num_rows="fixed", key="hangtag_data_editor"
+            )
+            hangtag_rows = hangtag_edited_df.fillna("").to_dict(orient="records")
+
+            hangtag_groups = hangtag_pad.group_rows_for_pads(hangtag_rows)
+            back_slots = len(hangtag_pad.load_mapping()["back_rects"])
+            st.caption(f"{len(hangtag_rows)} ta row → {len(hangtag_groups)} ta Pad-e group hoise "
+                       f"(same product/price -> ekshathe, protita Pad-e max {back_slots} ta unit).")
+
+    include_hangtag = st.checkbox("Generate Hangtag", key="chk_hangtag", disabled=not hangtag_rows)
+    if include_hangtag and hangtag_rows:
+        label_options["Hangtag"] = {
+            "generate": lambda rows, hrows=hangtag_rows: hangtag_pad.generate_batch_pdf(hrows),
+            "template_path": None,
+            "template_name": "Hangtag",
+        }
+        selected_labels.append("Hangtag")
+
+# ---- Section 4: Care Label (UI ONLY — not wired up yet) ----
+with st.expander("Care Label", expanded=False):
+    c1, c2 = st.columns(2)
+    c1.text_input("Enter Composition", key="care_composition", disabled=True)
+    c2.selectbox("Select Washing Code", [""], key="care_washing", disabled=True)
+
 if selected_labels and st.button("Generate Selected Labels", type="primary"):
     rows = corrected_df.to_dict(orient="records")
     filename_row = dict(st.session_state.get("pdf_filename_row", {}))
@@ -235,72 +280,6 @@ if selected_labels and st.button("Generate Selected Labels", type="primary"):
         mime="application/zip",
         use_container_width=True,
     )
-
-# ---- Section 3: Hangtag (LIVE — self-contained: own CSV upload + Pad download) ----
-# Hangtag needs richer per-row data (product_name in 21 languages, price
-# ladder, Collection, Colour_SKU, Batch, barcode, washing_code, Cotton)
-# that the shared PDF extractor above doesn't produce, so it has its own
-# CSV-driven flow here instead of using `corrected_df` / the ZIP button.
-with st.expander("Hangtag", expanded=False):
-    st.caption("Upload the Hangtag data CSV (Order_ID, Style, Colour, product_name, prices, "
-               "Collection, Colour_SKU, Batch, barcode, washing_code, Cotton, ...).")
-    hangtag_csv = st.file_uploader("Hangtag Data CSV", type=["csv"], key="hangtag_csv_uploader")
-
-    if hangtag_csv is not None:
-        try:
-            hangtag_df = pd.read_csv(hangtag_csv)
-        except Exception as e:
-            st.error(f"CSV porte giye error: {e}")
-            hangtag_df = None
-
-        if hangtag_df is not None and not hangtag_df.empty:
-            st.success(f"{len(hangtag_df)} ta row load hoise.")
-            hangtag_edited_df = st.data_editor(
-                hangtag_df, use_container_width=True, num_rows="fixed", key="hangtag_data_editor"
-            )
-            hangtag_rows = hangtag_edited_df.fillna("").to_dict(orient="records")
-
-            hangtag_groups = hangtag_pad.group_rows_for_pads(hangtag_rows)
-            back_slots = len(hangtag_pad.load_mapping()["back_rects"])
-            st.caption(f"{len(hangtag_rows)} ta row → {len(hangtag_groups)} ta Pad-e group hoise "
-                       f"(same product/price -> ekshathe, protita Pad-e max {back_slots} ta unit).")
-
-            hcol1, hcol2 = st.columns(2)
-            with hcol1:
-                if st.button("📄 Download Hangtag Pad — combined PDF", key="hangtag_combined_btn"):
-                    try:
-                        hangtag_pdf_bytes = hangtag_pad.generate_batch_pdf(hangtag_rows)
-                        hangtag_fname = (
-                            f"Hangtag_Pad_{hangtag_rows[0].get('Order_ID','batch')}_"
-                            f"{datetime.today().strftime('%d%m%Y')}.pdf"
-                        )
-                        st.download_button(
-                            "⬇️ Download PDF", data=hangtag_pdf_bytes, file_name=hangtag_fname,
-                            mime="application/pdf", key="hangtag_combined_dl",
-                        )
-                    except FileNotFoundError as e:
-                        st.error(f"Template/font file paoa jayni: {e}")
-                    except Exception as e:
-                        st.error(f"Generate korte giye error: {e}")
-            with hcol2:
-                if st.button("📑 Download Hangtag Pad — separate PDF per Pad", key="hangtag_separate_btn"):
-                    try:
-                        hangtag_pdfs = hangtag_pad.generate_batch(hangtag_rows)
-                        st.success(f"{len(hangtag_pdfs)} ta Pad PDF ready.")
-                        for i, pdf_bytes in enumerate(hangtag_pdfs, start=1):
-                            fname = f"Hangtag_Pad_{i}_{datetime.today().strftime('%d%m%Y')}.pdf"
-                            st.download_button(f"⬇️ {fname}", data=pdf_bytes, file_name=fname,
-                                                mime="application/pdf", key=f"hangtag_dl_{i}")
-                    except FileNotFoundError as e:
-                        st.error(f"Template/font file paoa jayni: {e}")
-                    except Exception as e:
-                        st.error(f"Generate korte giye error: {e}")
-
-# ---- Section 4: Care Label (UI ONLY — not wired up yet) ----
-with st.expander("Care Label", expanded=False):
-    c1, c2 = st.columns(2)
-    c1.text_input("Enter Composition", key="care_composition", disabled=True)
-    c2.selectbox("Select Washing Code", [""], key="care_washing", disabled=True)
 
 st.markdown(
     '<div class="footer-border" style="padding:14px 0; text-align:center; margin-top:1rem;">'
