@@ -1,0 +1,78 @@
+{
+  "Collection": {
+    "bbox": [
+      36.0,
+      215.0,
+      90.3,
+      220.3
+    ],
+    "fontsize": 4.5,
+    "font": "ArialRegular.ttf",
+    "color": "black"
+  },
+  "Colour_SKU": {
+    "bbox": [
+      40.0,
+      222.5,
+      91.6,
+      228.5
+    ],
+    "fontsize": 4.5,
+    "font": "ArialRegular.ttf",
+    "color": "black"
+  },
+  "Style_Merch_Season": {
+    "bbox": [
+      32.0,
+      228.5,
+      98.0,
+      234.5
+    ],
+    "fontsize": 4.5,
+    "font": "ArialRegular.ttf",
+    "color": "black"
+  },
+  "Batch": {
+    "bbox": [
+      40.0,
+      240.6,
+      90.3,
+      246.6
+    ],
+    "fontsize": 4.5,
+    "font": "ArialRegular.ttf",
+    "color": "black"
+  },
+  "washing_code": {
+    "bbox": [
+      30.9,
+      38.0,
+      100.0,
+      44.0
+    ],
+    "fontsize": 6.0,
+    "font": "PEPCO_Ovi.ttf",
+    "color": "black"
+  },
+  "Cotton": {
+    "bbox": [
+      100.0,
+      2.0,
+      122.0,
+      30.0
+    ],
+    "fontsize": 22.0,
+    "font": "PEPCO_Ovi.ttf",
+    "color": "black"
+  },
+  "barcode": {
+    "x0": 27.0,
+    "x1": 103.0,
+    "digits_y0": 281.5,
+    "digits_y1": 279.0,
+    "bars_height": 26.5,
+    "digits_fontsize": 8.0,
+    "color": "black",
+    "digits_font": "helv"
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "product_name": {
+    "bbox": [
+      6.9,
+      32.5,
+      124.3,
+      134.6
+    ],
+    "fontsize": 5.5,
+    "color": "black",
+    "align": "justify",
+    "auto_fit": true,
+    "max_fontsize": 5.5,
+    "min_fontsize": 3.5,
+    "fit_step": 0.1,
+    "font": "ArialRegular.ttf",
+    "bold_font": "ArialBold.ttf"
+  },
+  "prices": {
+    "EUR": {
+      "bbox": [
+        73.8,
+        133.5,
+        111.0,
+        163.3
+      ],
+      "fontsize": 21.0,
+      "font": "MyriadProSemibold.otf",
+      "color": "black"
+    },
+    "BAM": {
+      "bbox": [
+        73.8,
+        156.5,
+        111.0,
+        186.0
+      ],
+      "fontsize": 21.0,
+      "font": "MyriadProSemibold.otf",
+      "color": "black"
+    },
+    "PLN": {
+      "bbox": [
+        73.8,
+        180.0,
+        111.0,
+        208.6
+      ],
+      "fontsize": 21.0,
+      "font": "MyriadProSemibold.otf",
+      "color": "black"
+    },
+    "RON": {
+      "bbox": [
+        73.8,
+        201.0,
+        111.0,
+        231.3
+      ],
+      "fontsize": 21.0,
+      "font": "MyriadProSemibold.otf",
+      "color": "black"
+    },
+    "CZK": {
+      "bbox": [
+        89.0,
+        224.5,
+        111.0,
+        254.0
+      ],
+      "fontsize": 21.0,
+      "font": "MyriadProSemibold.otf",
+      "color": "black"
+    },
+    "MKD": {
+      "bbox": [
+        78.3,
+        247.0,
+        111.0,
+        276.7
+      ],
+      "fontsize": 21.0,
+      "font": "MyriadProSemibold.otf",
+      "color": "black"
+    },
+    "RSD": {
+      "bbox": [
+        78.3,
+        269.0,
+        111.0,
+        299.4
+      ],
+      "fontsize": 21.0,
+      "font": "MyriadProSemibold.otf",
+      "color": "black"
+    },
+    "HUF": {
+      "bbox": [
+        78.3,
+        293.0,
+        111.0,
+        322.0
+      ],
+      "fontsize": 21.0,
+      "font": "MyriadProSemibold.otf",
+      "color": "black"
+    }
+  }
+}
