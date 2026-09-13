@@ -139,5 +139,12 @@
     "prefix": "Size: ",
     "source_column": "Sizes",
     "align": "center"
+  },
+  "back_side_static_label": {
+    "text": "BACK SIDE",
+    "y": 217,
+    "font_size": 12,
+    "bold": true,
+    "align": "center"
   }
 }
