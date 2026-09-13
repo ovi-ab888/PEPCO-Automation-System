@@ -176,9 +176,11 @@ def generate_pad_for_group(group_rows, template_path=TEMPLATE_PATH, config_path=
     size_cfg = mapping.get("back_size_label")
     tahoma_path = os.path.join(BASE_DIR, "fonts", "Tahoma.ttf")
     size_fontname = "helv"
+    size_font_obj = fitz.Font(fontname="helv")
     if size_cfg and os.path.exists(tahoma_path):
         pad_page.insert_font(fontfile=tahoma_path, fontname="tahoma_size")
         size_fontname = "tahoma_size"
+        size_font_obj = fitz.Font(fontfile=tahoma_path)
 
     for rect_coords, unit_row in zip(mapping["back_rects"], group_rows):
         back_bytes = hb.generate_single(unit_row)
@@ -192,7 +194,7 @@ def generate_pad_for_group(group_rows, template_path=TEMPLATE_PATH, config_path=
                 text = f"{size_cfg.get('prefix', 'Size: ')}{size_value}"
                 fs = size_cfg["font_size"]
                 x_center = (rect_coords[0] + rect_coords[2]) / 2
-                tw = fitz.get_text_length(text, fontname=size_fontname, fontsize=fs)
+                tw = size_font_obj.text_length(text, fontsize=fs)
                 x = x_center - tw / 2 if size_cfg.get("align", "center") == "center" else rect_coords[0]
                 pad_page.insert_text((x, size_cfg["y"]), text, fontsize=fs, fontname=size_fontname, color=BLACK)
     # Remaining back_rects (if group has < 7 rows) are simply left blank —
