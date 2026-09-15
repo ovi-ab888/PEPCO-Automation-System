@@ -174,7 +174,6 @@ def generate_pad_for_group(group_rows, template_path=TEMPLATE_PATH, config_path=
     front_src.close()
 
     size_cfg = mapping.get("back_size_label")
-    static_label_cfg = mapping.get("back_side_static_label")
     tahoma_path = os.path.join(BASE_DIR, "fonts", "Tahoma.ttf")
     size_fontname = "helv"
     size_font_obj = fitz.Font(fontname="helv")
@@ -183,9 +182,6 @@ def generate_pad_for_group(group_rows, template_path=TEMPLATE_PATH, config_path=
         size_fontname = "tahoma_size"
         size_font_obj = fitz.Font(fontfile=tahoma_path)
 
-    static_fontname = "hebo" if (static_label_cfg and static_label_cfg.get("bold")) else "helv"
-    static_font_obj = fitz.Font(fontname=static_fontname)
-
     for rect_coords, unit_row in zip(mapping["back_rects"], group_rows):
         back_bytes = hb.generate_single(unit_row)
         back_src = fitz.open("pdf", back_bytes)
@@ -193,22 +189,24 @@ def generate_pad_for_group(group_rows, template_path=TEMPLATE_PATH, config_path=
         back_src.close()
 
         if size_cfg:
+            # `prefix` can be multi-line ("BACK SIDE\nSize: ") — every line
+            # is drawn as-is except the LAST line, which gets the row's
+            # size value appended (e.g. "BACK SIDE" then "Size: 3/4").
             size_value = str(unit_row.get(size_cfg.get("source_column", "Sizes"), "")).strip()
+            prefix = size_cfg.get("prefix", "Size: ")
+            lines = prefix.split("\n")
             if size_value and size_value.lower() != "nan":
-                text = f"{size_cfg.get('prefix', 'Size: ')}{size_value}"
-                fs = size_cfg["font_size"]
-                x_center = (rect_coords[0] + rect_coords[2]) / 2
-                tw = size_font_obj.text_length(text, fontsize=fs)
-                x = x_center - tw / 2 if size_cfg.get("align", "center") == "center" else rect_coords[0]
-                pad_page.insert_text((x, size_cfg["y"]), text, fontsize=fs, fontname=size_fontname, color=BLACK)
-
-        if static_label_cfg:
-            text = static_label_cfg["text"]
-            fs = static_label_cfg["font_size"]
+                lines[-1] = f"{lines[-1]}{size_value}"
+            fs = size_cfg["font_size"]
+            line_gap = size_cfg.get("line_gap", fs * 1.2)
             x_center = (rect_coords[0] + rect_coords[2]) / 2
-            tw = static_font_obj.text_length(text, fontsize=fs)
-            x = x_center - tw / 2 if static_label_cfg.get("align", "center") == "center" else rect_coords[0]
-            pad_page.insert_text((x, static_label_cfg["y"]), text, fontsize=fs, fontname=static_fontname, color=BLACK)
+            for i, line in enumerate(lines):
+                if not line:
+                    continue
+                tw = size_font_obj.text_length(line, fontsize=fs)
+                x = x_center - tw / 2 if size_cfg.get("align", "center") == "center" else rect_coords[0]
+                y = size_cfg["y"] + i * line_gap
+                pad_page.insert_text((x, y), line, fontsize=fs, fontname=size_fontname, color=BLACK)
     # Remaining back_rects (if group has < 7 rows) are simply left blank —
     # the template's own empty box shows there, matching a partial pad.
 
