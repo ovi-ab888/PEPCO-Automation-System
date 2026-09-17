@@ -145,12 +145,39 @@ def group_rows_for_pads(rows, chunk_size=None, mapping=None):
     return groups
 
 
-def generate_pad_for_group(group_rows, template_path=TEMPLATE_PATH, config_path=CONFIG_PATH, mapping=None):
+def pick_template_for_group(group_rows, mapping, fallback_template=TEMPLATE_PATH):
     """
-    Build ONE Pad PDF (bytes) for a group of 1-7 rows: ONE Front (from
-    group_rows[0]) + up to 7 Back slots, each filled with a DIFFERENT row's
-    data (different barcode/SKU/batch/etc per unit). Leftover Back slots
-    (if the group has fewer than 7 rows) are left blank.
+    Pick the Pad template file based on how many units are in this group.
+    Config (`mapping["template_selection"]`):
+        {"small_template": "...", "big_template": "...", "small_max_units": 5}
+    <= small_max_units  -> small_template  (less empty space on the sheet)
+    >  small_max_units  -> big_template
+    Falls back to `fallback_template` if no template_selection is configured
+    or the chosen file doesn't exist.
+    """
+    sel = mapping.get("template_selection")
+    if not sel:
+        return fallback_template
+
+    rel = sel.get("small_template") if len(group_rows) <= sel.get("small_max_units", 5) \
+        else sel.get("big_template")
+    if not rel:
+        return fallback_template
+
+    path = rel if os.path.isabs(rel) else os.path.join(BASE_DIR, rel)
+    return path if os.path.exists(path) else fallback_template
+
+
+def generate_pad_for_group(group_rows, template_path=None, config_path=CONFIG_PATH, mapping=None):
+    """
+    Build ONE Pad PDF (bytes) for a group of rows: ONE Front (from
+    group_rows[0]) + one Back slot per row, each filled with a DIFFERENT
+    row's data (different barcode/SKU/batch/etc per unit). Leftover Back
+    slots are left blank.
+
+    `template_path` defaults to whichever Pad template fits this group's
+    size (see pick_template_for_group) — small sheet for small orders,
+    big sheet for larger ones. Pass an explicit path to override.
     """
     if mapping is None:
         mapping = load_mapping(config_path)
@@ -161,6 +188,9 @@ def generate_pad_for_group(group_rows, template_path=TEMPLATE_PATH, config_path=
             f"This Pad template only has {len(mapping['back_rects'])} Back slots, "
             f"got {len(group_rows)} rows in this group"
         )
+
+    if template_path is None:
+        template_path = pick_template_for_group(group_rows, mapping)
 
     header_row = group_rows[0]
     front_bytes = hf.generate_single(header_row)
@@ -215,18 +245,19 @@ def generate_pad_for_group(group_rows, template_path=TEMPLATE_PATH, config_path=
     return data
 
 
-def generate_batch(rows, template_path=TEMPLATE_PATH, config_path=CONFIG_PATH):
+def generate_batch(rows, template_path=None, config_path=CONFIG_PATH):
     """
     Groups `rows` (same product_name+price -> same Pad, one unique Back
-    per row, up to however many Back slots the template has) and returns
-    a list of Pad PDF bytes, one per Pad/group.
+    per row) and returns a list of Pad PDF bytes, one per Pad/group.
+    Each group automatically gets the small or big Pad template based on
+    how many units it has; pass `template_path` to force one template.
     """
     mapping = load_mapping(config_path)
     groups = group_rows_for_pads(rows, mapping=mapping)
     return [generate_pad_for_group(g, template_path=template_path, mapping=mapping) for g in groups]
 
 
-def generate_batch_pdf(rows, template_path=TEMPLATE_PATH, config_path=CONFIG_PATH):
+def generate_batch_pdf(rows, template_path=None, config_path=CONFIG_PATH):
     """Same grouping as generate_batch(), but returns ONE multi-page PDF (one Pad page per group)."""
     mapping = load_mapping(config_path)
     groups = group_rows_for_pads(rows, mapping=mapping)
