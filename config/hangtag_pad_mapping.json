@@ -140,5 +140,10 @@
     "source_column": "Sizes",
     "align": "center",
     "line_gap": 12
+  },
+  "template_selection": {
+    "small_template": "templates/Hangtag/small_pad.pdf",
+    "big_template": "templates/Hangtag/big_pad.pdf",
+    "small_max_units": 5
   }
 }
