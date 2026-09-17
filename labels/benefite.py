@@ -121,6 +121,17 @@ def _leading_number(token: str):
     return int(m.group()) if m else None
 
 
+_SIZE_TOKEN_RE = re.compile(r"\b(XXXXL|XXXL|XXL|XL|XXS|XS|S|M|L|\d+)\b", re.IGNORECASE)
+
+
+def _extract_size_tokens(text: str):
+    """Extracts EXACT clothing-size tokens (S, M, L, XL, XXL, XXXL, or
+    plain numbers) from text, word-boundary anchored — NOT substring
+    matching. This avoids 'L' or 'XL' being falsely counted as present
+    just because they're literally substrings of 'XL'/'XXL'/'XXXL'."""
+    return [m.group(1).upper() for m in _SIZE_TOKEN_RE.finditer(text)]
+
+
 def pick_variant_for_row(sticker_type: str, row: dict) -> str:
     variants = list_variants(sticker_type)
     if not variants:
@@ -152,8 +163,15 @@ def pick_variant_for_row(sticker_type: str, row: dict) -> str:
             matches = sum(1 for n in size_numbers if any(lo <= n <= hi for lo, hi in file_ranges))
             key = (matches, -abs(len(file_ranges) - len(size_numbers)))
         else:
-            matches = sum(1 for tok in size_tokens if tok.lower() in variant.lower())
-            key = (matches, 0)
+            # Letter sizes (XS/S/M/L/XL/XXL/XXXL, ...) — match on EXACT
+            # tokens extracted from the filename, never raw substring
+            # (substring would wrongly count "L"/"XL" as present in
+            # "XXL"/"XXXL" too, since they literally contain those
+            # letters in sequence).
+            file_tokens = set(_extract_size_tokens(variant))
+            row_tokens_upper = [t.upper() for t in size_tokens]
+            matches = sum(1 for tok in row_tokens_upper if tok in file_tokens)
+            key = (matches, -abs(len(file_tokens) - len(size_tokens)))
 
         if best_key is None or key > best_key:
             best_key, best_variant = key, variant
