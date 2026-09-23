@@ -147,6 +147,16 @@ with st.expander("Benefite Tag and Sticker", expanded=True):
                     "template_name": sticker_type,
                 }
                 selected_labels.append(sticker_type)
+
+                # --- TEMP DEBUG: shows Sizes -> picked file per row, so we
+                # can see exactly why the wrong variant gets chosen. Remove
+                # this block once the auto-size matching is confirmed correct.
+                with st.expander(f"🔎 Debug: {sticker_type} picks", expanded=True):
+                    variants = benefite_label.list_variants(sticker_type)
+                    st.caption("Available files: " + ", ".join(variants))
+                    for r in corrected_df.to_dict(orient="records"):
+                        picked = benefite_label.pick_variant_for_row(sticker_type, r)
+                        st.caption(f"[{sticker_type}] Sizes: {r.get('Sizes')} → picked: {picked}")
             continue
 
         variants = benefite_label.list_variants(sticker_type)
