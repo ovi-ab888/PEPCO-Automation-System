@@ -21,20 +21,28 @@ here.
 
 --- Auto-select-by-Sizes folders (KVI Size Sticker, Utag, ...) ---
 Some folders hold one PDF per size-range family, with the range(s) encoded
-right in the filename, using -, : or / as the separator, e.g.:
+right in the filename, using -, :, / or _ as the separator, e.g.:
     templates/Benefite/KVI Size Sticker/KVI_Size_Sticker 3:4, 4:5, 5:6.pdf
-    templates/Benefite/Utag/Utag  0:3, 3:6, 6:9, 9:12, 12:18.pdf
+    templates/Benefite/Utag/Utag 3_4, 4_5, 5_6, 6_7, 7_8, 8_9.pdf
 For these, no manual variant dropdown is shown — generate_batch_auto_size()
-picks the right file PER ROW:
-  - If the row's own Sizes are themselves ranges (e.g. "3/4, 4/5"), they
-    are matched EXACTLY against a filename's encoded ranges — this avoids
-    false ties between overlapping wide-range files (e.g. a file covering
-    "0:0, 0:3, 3:6...12:18" numerically overlaps "3:4, 4:5...8:9" too, so
-    exact range matching is needed, not just "does this number fall
-    inside this range").
-  - Otherwise (plain sizes like "9, 10, S, M"), falls back to checking
-    whether each size number falls inside one of the filename's ranges,
-    or a literal substring match for non-range filenames.
+picks the right file PER ROW, via pick_variant_for_row(), in this order:
+
+  1. EXPLICIT OVERRIDE — config/benefite_size_overrides.json can map a
+     sticker type's exact Sizes string straight to a filename. This is the
+     most reliable option for a known/problematic case (see that file's
+     own comment) and always wins over the heuristics below.
+  2. EXACT-SET match — the row's size tokens (as ranges, or as plain
+     tokens/numbers) are compared as a SET against each candidate file's
+     own extracted tokens. A file whose tokens are EXACTLY the same set as
+     the row's wins outright — this beats any "coverage" style match
+     (e.g. a wide range file that happens to numerically contain the same
+     numbers) so there's no ambiguous tie between an exact match and a
+     superset match.
+  3. Heuristic scoring fallback — for partial/inexact matches: exact range
+     tuples in common, or how many size numbers fall inside a file's
+     range(s), or how many size tokens are literally present as tokens in
+     the filename (not substring — see _extract_size_tokens).
+
 This means a single checkbox in the UI can correctly cover rows with
 different Sizes each, without the user choosing anything extra.
 
@@ -56,6 +64,7 @@ from engine.label_engine import fill_single_label, generate_multipage_pdf
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
 BENEFITE_ROOT = os.path.join(BASE_DIR, "templates", "Benefite")
 CONFIG_PATH = os.path.join(BASE_DIR, "config", "pad_header_mapping.json")
+SIZE_OVERRIDES_PATH = os.path.join(BASE_DIR, "config", "benefite_size_overrides.json")
 
 # used only as a filename-logic fallback if nothing has been selected yet
 TEMPLATE_PATH = None
@@ -110,10 +119,16 @@ def is_auto_size_type(sticker_type: str) -> bool:
     return sticker_type in AUTO_SIZE_TYPES
 
 
+# Separators seen across real filenames so far: colon, slash, hyphen,
+# underscore (e.g. "Utag 3_4, 4_5...pdf" uses "_" instead of "/" because
+# "/" can't appear in a filename on some systems).
+_RANGE_SEP = r"[:/_-]"
+
+
 def _extract_ranges(text: str):
-    """Finds ALL numeric ranges in text, any separator (-, :, /).
+    """Finds ALL numeric ranges in text, any separator (-, :, /, _).
     e.g. '0:3, 3:6, 6:9' -> [(0,3), (3,6), (6,9)]"""
-    return [(int(a), int(b)) for a, b in re.findall(r"(\d+)\s*[:/-]\s*(\d+)", text)]
+    return [(int(a), int(b)) for a, b in re.findall(rf"(\d+)\s*{_RANGE_SEP}\s*(\d+)", text)]
 
 
 def _leading_number(token: str):
@@ -132,6 +147,22 @@ def _extract_size_tokens(text: str):
     return [m.group(1).upper() for m in _SIZE_TOKEN_RE.finditer(text)]
 
 
+def _load_size_overrides() -> dict:
+    try:
+        with open(SIZE_OVERRIDES_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _normalize_sizes_key(sizes_str: str) -> str:
+    """Normalizes a Sizes string for override lookup: strip, collapse
+    whitespace around commas, so '9,10, 11 ,12' and '9, 10, 11, 12' both
+    hit the same override entry."""
+    tokens = [t.strip() for t in sizes_str.split(",") if t.strip()]
+    return ", ".join(tokens)
+
+
 def pick_variant_for_row(sticker_type: str, row: dict) -> str:
     variants = list_variants(sticker_type)
     if not variants:
@@ -141,14 +172,34 @@ def pick_variant_for_row(sticker_type: str, row: dict) -> str:
     if not sizes_str:
         return variants[0]
 
+    # ---- 1) Explicit override (config/benefite_size_overrides.json) ----
+    overrides = _load_size_overrides()
+    type_overrides = overrides.get(sticker_type, {})
+    override_file = type_overrides.get(_normalize_sizes_key(sizes_str))
+    if override_file and override_file in variants:
+        return override_file
+
     size_tokens = [s.strip() for s in sizes_str.split(",") if s.strip()]
 
     row_ranges = []
     for tok in size_tokens:
-        m = re.match(r"^(\d+)\s*[:/-]\s*(\d+)$", tok)
+        m = re.match(rf"^(\d+)\s*{_RANGE_SEP}\s*(\d+)$", tok)
         if m:
             row_ranges.append((int(m.group(1)), int(m.group(2))))
 
+    # ---- 2) Exact-SET match (beats any partial/coverage match) ----
+    if row_ranges:
+        row_range_set = set(row_ranges)
+        for variant in variants:
+            if set(_extract_ranges(variant)) == row_range_set:
+                return variant
+    else:
+        row_token_set = set(t.upper() for t in size_tokens)
+        for variant in variants:
+            if set(_extract_size_tokens(variant)) == row_token_set:
+                return variant
+
+    # ---- 3) Heuristic scoring fallback ----
     best_variant, best_key = None, None
     for variant in variants:
         file_ranges = _extract_ranges(variant)
@@ -163,10 +214,10 @@ def pick_variant_for_row(sticker_type: str, row: dict) -> str:
             matches = sum(1 for n in size_numbers if any(lo <= n <= hi for lo, hi in file_ranges))
             key = (matches, -abs(len(file_ranges) - len(size_numbers)))
         else:
-            # Letter sizes (XS/S/M/L/XL/XXL/XXXL, ...) — match on EXACT
-            # tokens extracted from the filename, never raw substring
-            # (substring would wrongly count "L"/"XL" as present in
-            # "XXL"/"XXXL" too, since they literally contain those
+            # Letter sizes (XS/S/M/L/XL/XXL/XXXL, ...) or plain numbers —
+            # match on EXACT tokens extracted from the filename, never raw
+            # substring (substring would wrongly count "L"/"XL" as present
+            # in "XXL"/"XXXL" too, since they literally contain those
             # letters in sequence).
             file_tokens = set(_extract_size_tokens(variant))
             row_tokens_upper = [t.upper() for t in size_tokens]
