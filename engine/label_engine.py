@@ -416,7 +416,7 @@ def fill_placeholders_by_search(source, row: dict, font: str = "helv",
 
     # PASS 2: remove the placeholder text from the file (fill=False -> no white box)
     for rect, _ in jobs:
-              inner = fitz.Rect(rect.x0 + 0.5, rect.y0 + rect.height * 0.60, rect.x1 - 0.5, rect.y1 - 1)
+        inner = fitz.Rect(rect.x0 + 0.5, rect.y0 + 1, rect.x1 - 0.5, rect.y1 - 1)
         page.add_redact_annot(inner, fill=False)
     if jobs:
         try:
