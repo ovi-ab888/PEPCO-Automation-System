@@ -1,0 +1,8 @@
+{
+  "_comment": "Optional explicit overrides: sticker_type -> {exact Sizes string -> exact filename}. Checked FIRST, before any auto-matching logic. Use this for any case you want 100% guaranteed/pinned, or a case the auto-matching ever gets wrong. Sizes string must match exactly what's in the data (after trimming spaces around commas) - see benefite.py's _normalize_sizes_key(). Leave the type/key out entirely to just use auto-matching for it.",
+
+  "Utag": {
+  },
+  "KVI Size Sticker": {
+  }
+}

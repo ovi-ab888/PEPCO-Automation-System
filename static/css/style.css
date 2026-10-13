@@ -1,0 +1,643 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ============================================================
+   PEPCO Label Automation — Monochrome Emboss / Deboss Theme
+   One clean file (replaces old indigo theme + v1/v2/v3 patches)
+
+   EMBOSS (উঁচু)  = header, card, login box, expander, button
+   DEBOSS (গর্ত)  = input, select, uploader, table, alert
+
+   Tweak depth: only change the values inside :root below.
+   ============================================================ */
+
+* { font-family: 'Inter', sans-serif; }
+
+/* ---------- 1. Design tokens (DARK = default) ---------- */
+:root {
+  --bg:      #262626;   /* মাঝারি ধূসর: আলো-ছায়া দুটোই ফোটে */
+  --surface: #2b2b2b;
+  --well:    #1c1c1c;   /* deboss এর "গর্ত" */
+  --text:    #f0f0f0;
+  --muted:   #9a9a9a;
+  --hi:      #3f3f3f;   /* আলো */
+  --lo:      #101010;   /* ছায়া */
+  --line:    rgba(255,255,255,0.08);
+  --btn-bg:  linear-gradient(145deg,#ffffff,#d4d4d4);
+  --btn-fg:  #111111;
+
+  --raise:    10px 10px 22px var(--lo), -8px -8px 18px var(--hi),
+              inset 1px 1px 0 rgba(255,255,255,0.08);
+  --raise-sm: 5px 5px 12px var(--lo), -4px -4px 10px var(--hi),
+              inset 1px 1px 0 rgba(255,255,255,0.08);
+  --inset:    inset 6px 6px 12px var(--lo), inset -4px -4px 9px var(--hi);
+  --face:     linear-gradient(145deg,#303030,#232323);   /* উঁচু জিনিসের মুখ */
+}
+
+/* ---------- 2. LIGHT mode tokens ---------- */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg:#e2e2e2; --surface:#e2e2e2; --well:#d6d6d6;
+    --text:#1a1a1a; --muted:#6a6a6a;
+    --hi:#ffffff; --lo:#a9a9a9; --line:rgba(0,0,0,0.1);
+    --btn-bg:linear-gradient(145deg,#2a2a2a,#0e0e0e); --btn-fg:#f5f5f5;
+    --raise:    10px 10px 22px var(--lo), -10px -10px 22px var(--hi);
+    --raise-sm: 5px 5px 12px var(--lo), -5px -5px 12px var(--hi);
+    --inset:    inset 6px 6px 12px var(--lo), inset -6px -6px 12px var(--hi);
+    --face:     linear-gradient(145deg,#ececec,#d8d8d8);
+  }
+}
+
+/* ---------- 3. Base ---------- */
+.stApp { background: var(--bg) !important; }
+
+.stApp, .stApp p, .stApp div, .stApp span, .stApp label,
+.stMarkdown, .stMarkdown p, .stMarkdown span, .stMarkdown strong, .stMarkdown b,
+.stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4 {
+  color: var(--text) !important;
+}
+[data-testid="stHeader"] { background: transparent !important; }
+[data-testid="stCaptionContainer"], .stCaption, small { color: var(--muted) !important; }
+
+/* Labels */
+.stSelectbox label, .stNumberInput label, .stTextInput label, .stRadio label,
+.stRadio div[role="radiogroup"], .stRadio div[role="radiogroup"] label {
+  color: var(--text) !important;
+}
+
+/* ---------- 4. Headings (letterpress + clear hierarchy) ---------- */
+.stMarkdown h1, [data-testid="stHeading"] h1 { font-size: 1.6rem !important; }
+.stMarkdown h2, [data-testid="stHeading"] h2 { font-size: 1.25rem !important; font-weight: 600 !important; }
+.stMarkdown h3, [data-testid="stHeading"] h3 {
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted) !important;
+}
+.stMarkdown h1, .stMarkdown h2, [data-testid="stHeading"] h1, [data-testid="stHeading"] h2 {
+  letter-spacing: 0.02em;
+  font-weight: 700;
+  text-shadow: 0 1px 0 var(--hi), 0 -1px 0 var(--lo);
+}
+
+/* ============================================================
+   5. EMBOSS (উঁচু): header, card, login box, expander
+   ============================================================ */
+.main-header,
+.card,
+div[data-testid="stVerticalBlockBorderWrapper"],
+[data-testid="stExpander"] {
+  background: var(--face) !important;
+  border: none !important;
+  box-shadow: var(--raise) !important;
+}
+.main-header {
+  border-radius: 24px !important;
+  border-top: 1px solid rgba(255,255,255,0.06) !important;
+  margin: 0.5rem 0 2rem !important;
+  padding: 2rem !important;
+  text-align: center;
+}
+.main-header h1 {
+  color: var(--text) !important;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 1.9rem !important;
+  text-shadow: 0 2px 2px var(--lo), 0 -1px 0 var(--hi);
+  filter: grayscale(1);            /* 🔒 emoji ধূসর */
+}
+.main-header p { color: var(--muted) !important; letter-spacing: 0.04em; margin-top: 0.5rem; }
+.main-header img { border-radius: 10px; box-shadow: var(--raise-sm); filter: grayscale(1) contrast(1.05); }
+
+.card {
+  border-radius: 18px !important;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--line) !important;
+  color: var(--text) !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"] { border-radius: 18px !important; }
+
+/* Expander */
+[data-testid="stExpander"] { border-radius: 14px !important; box-shadow: var(--raise-sm) !important; }
+[data-testid="stExpander"] details { border: none !important; background: transparent !important; }
+[data-testid="stExpander"] summary {
+  border: none !important;
+  border-radius: 14px !important;
+  font-weight: 500 !important;
+  color: var(--text) !important;
+}
+[data-testid="stExpander"] summary:hover { background: transparent !important; }
+/* Expander-এর ভেতরের box সমতল রাখি, নইলে shadow-র উপর shadow হয় */
+[data-testid="stExpander"] div[data-testid="stVerticalBlockBorderWrapper"] {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 1px solid var(--line) !important;
+}
+
+/* Login form: double border সরানো */
+[data-testid="stForm"] { border: none !important; padding: 0 !important; }
+
+/* ============================================================
+   6. DEBOSS (গর্ত): input, select, uploader, table, alert
+   ============================================================ */
+div[data-baseweb="select"] > div,
+div[data-baseweb="input"],
+textarea,
+[data-testid="stFileUploaderDropzone"],
+[data-testid="stDataFrame"],
+[data-testid="stDataEditor"],
+[data-testid="stAlert"] {
+  background: var(--well) !important;
+  background-color: var(--well) !important;
+  border: none !important;
+  box-shadow: var(--inset) !important;
+}
+div[data-baseweb="select"] > div,
+div[data-baseweb="input"],
+textarea { border-radius: 12px !important; }
+
+/* Inner input layers: কিছু না, শুধু বাইরের গর্তটা থাকবে */
+div[data-baseweb="base-input"],
+[data-testid="stNumberInputContainer"] {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+.stTextInput input, .stNumberInput input {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--text) !important;
+  padding: 0.5rem 1rem !important;
+}
+.stTextInput input:focus, .stNumberInput input:focus { box-shadow: none !important; }
+div[data-baseweb="input"]:focus-within { outline: 1px solid var(--muted); }
+.stTextInput input::placeholder { color: var(--muted) !important; }
+[data-testid="stNumberInputStepUp"], [data-testid="stNumberInputStepDown"] {
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--text) !important;
+}
+
+/* File uploader (deboss tray) */
+[data-testid="stFileUploaderDropzone"] {
+  border: 1px dashed rgba(255,255,255,0.18) !important;
+  border-radius: 18px !important;
+  padding: 2rem 1rem !important;
+  text-align: center !important;
+}
+@media (prefers-color-scheme: light) {
+  [data-testid="stFileUploaderDropzone"] { border-color: rgba(0,0,0,0.25) !important; }
+}
+[data-testid="stFileUploaderDropzone"]:hover { border-color: var(--text) !important; }
+[data-testid="stFileUploaderDropzone"] svg { fill: var(--muted) !important; }
+[data-testid="stFileUploaderDropzoneInstructions"] {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] svg {
+  width: 32px !important; height: 32px !important; margin-bottom: 4px;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] span { font-size: 14px !important; }
+[data-testid="stFileUploaderDropzoneInstructions"] small {
+  font-size: 12px !important; color: var(--muted) !important;
+}
+
+/* Data editor / table */
+[data-testid="stDataFrame"], [data-testid="stDataEditor"] {
+  border-radius: 14px !important;
+  padding: 4px;
+}
+[data-testid="stDataFrame"] div[role="columnheader"],
+[data-testid="stDataEditor"] div[role="columnheader"] {
+  background: transparent !important;
+  color: var(--text) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em;
+}
+[data-testid="stDataFrame"] div[role="row"]:nth-child(even),
+[data-testid="stDataEditor"] div[role="row"]:nth-child(even) {
+  background: var(--line) !important;
+}
+
+/* Alerts: সবুজ/লাল/হলুদ বাদ, পুরো grayscale */
+[data-testid="stAlert"] {
+  border-radius: 12px !important;
+  filter: grayscale(1);              /* emoji-ও ধূসর হবে */
+}
+[data-testid="stAlert"] > div, [data-testid="stAlertContainer"] { background: transparent !important; }
+[data-testid="stAlert"] p, [data-testid="stAlert"] div { color: var(--text) !important; }
+
+/* ============================================================
+   7. BUTTONS: উঁচু, চাপলে ভেতরে বসে যায়
+   ============================================================ */
+.stButton > button,
+.stDownloadButton button,
+div[data-testid="stFormSubmitButton"] button,
+div[data-testid="stButton"] > button[kind="primary"],
+div[data-testid="stFormSubmitButton"] button[kind="primary"] {
+  background: var(--btn-bg) !important;
+  color: var(--btn-fg) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 0.7rem 2rem !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  letter-spacing: 0.06em;
+  box-shadow: var(--raise-sm) !important;
+  transition: box-shadow .15s ease, transform .15s ease !important;
+}
+.stButton > button:hover,
+.stDownloadButton button:hover,
+div[data-testid="stFormSubmitButton"] button:hover,
+div[data-testid="stButton"] > button[kind="primary"]:hover {
+  background: var(--btn-bg) !important;
+  transform: translateY(-1px);
+}
+.stButton > button:active,
+.stDownloadButton button:active,
+div[data-testid="stFormSubmitButton"] button:active {
+  box-shadow: var(--inset) !important;
+  transform: translateY(1px);
+}
+.stButton > button p, .stDownloadButton button p,
+div[data-testid="stFormSubmitButton"] button p { color: var(--btn-fg) !important; }
+
+/* Secondary buttons (Upload New File, Add Material ...) */
+.stButton > button[kind="secondary"] {
+  background: var(--face) !important;
+  color: var(--text) !important;
+  box-shadow: var(--raise-sm) !important;
+}
+.stButton > button[kind="secondary"] p { color: var(--text) !important; }
+
+/* ---------- 8. Checkbox / Toggle / Radio ---------- */
+input[type="checkbox"], input[type="radio"] { accent-color: var(--text) !important; }
+[data-testid="stCheckbox"] span[role="checkbox"],
+[data-baseweb="checkbox"] > div:first-child {
+  background: var(--well) !important;
+  box-shadow: var(--inset) !important;
+  border: none !important;
+}
+[data-testid="stToggle"] [role="switch"] { box-shadow: var(--inset) !important; }
+
+/* ============================================================
+   9. Custom components (theme.py classes)
+   ============================================================ */
+
+/* Badge */
+.pepco-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  margin-left: 8px;
+  border-radius: 10px;
+  letter-spacing: 0.05em;
+  background: var(--well) !important;
+  color: var(--text) !important;
+  box-shadow: var(--inset);
+}
+.pepco-badge.muted { color: var(--muted) !important; }
+
+/* Step circles (render_steps) */
+.pepco-steps { display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 14px; }
+.pepco-step-circle {
+  width: 26px; height: 26px; border-radius: 50%;
+  font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--well); color: var(--muted);
+  border: none !important; box-shadow: var(--inset);
+}
+.pepco-step-circle.active {
+  background: var(--btn-bg) !important;
+  color: var(--btn-fg) !important;
+  box-shadow: var(--raise-sm);
+}
+
+/* Pill tabs (render_progress_tabs) */
+.pepco-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.pepco-tab {
+  flex: 1; min-width: 140px; text-align: center;
+  padding: 10px 14px; border-radius: 12px;
+  font-size: 13px; font-weight: 500;
+  background: var(--well); color: var(--muted);
+  box-shadow: var(--inset);
+}
+.pepco-tab.active {
+  background: var(--face); color: var(--text); font-weight: 600;
+  box-shadow: var(--raise-sm);
+}
+
+/* Compact stage line (render_stage_line) */
+.pepco-stage-line { display: flex; align-items: center; gap: 12px; margin: 6px 0 14px; }
+.pepco-dots { display: flex; align-items: center; gap: 6px; }
+.pepco-dot {
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--well); box-shadow: var(--inset);
+}
+.pepco-dot.current, .pepco-dot.done { background: var(--btn-bg); box-shadow: var(--raise-sm); }
+.pepco-dot-line { display: inline-block; width: 22px; height: 2px; background: var(--line); }
+.pepco-dot-line.done { background: var(--muted); }
+.pepco-stage-text {
+  font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted) !important;
+}
+
+/* Big stage banner (render_stage_banner) */
+.pepco-stage-banner {
+  width: 100%; text-align: center;
+  padding: 18px 16px; margin: 18px 0 14px;
+  border-radius: 16px;
+  background: var(--face); box-shadow: var(--raise-sm);
+  font-size: 22px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+}
+
+/* Legacy classes (plate app compatibility) */
+.tag-display {
+  background: var(--well); box-shadow: var(--inset);
+  padding: 10px; border-radius: 10px;
+  text-align: center; font-weight: 600; font-size: 0.9rem;
+}
+.metric-card {
+  background: var(--face); box-shadow: var(--raise-sm);
+  border-radius: 14px; padding: 1rem; text-align: center;
+}
+.metric-value { font-size: 2rem; font-weight: 700; }
+.metric-label { font-size: 0.85rem; color: var(--muted) !important; margin-top: 0.5rem; }
+.best-algo {
+  background: var(--btn-bg); color: var(--btn-fg) !important;
+  box-shadow: var(--raise); border-radius: 16px;
+  padding: 1.5rem; text-align: center; margin-bottom: 2rem;
+}
+.best-algo .metric-value, .best-algo .metric-label { color: var(--btn-fg) !important; }
+.warning, .info {
+  background: var(--well); box-shadow: var(--inset);
+  padding: 12px; border-radius: 10px; margin: 1rem 0;
+}
+.footer-text { color: var(--muted) !important; }
+.footer-border { border-top: 1px solid var(--line) !important; }
+
+/* ---------- 10. Scrollbar ---------- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg) !important; }
+::-webkit-scrollbar-thumb { background: var(--muted) !important; border-radius: 10px; }
+
+
+/* ============================================================
+   11. v4 tweaks — stronger depth, Upload button emboss, compact header
+   ============================================================ */
+:root {
+  --bg:#2a2a2a; --surface:#2f2f2f; --well:#1a1a1a;
+  --hi:#474747; --lo:#0c0c0c;
+  --raise:    12px 12px 26px var(--lo), -9px -9px 20px var(--hi),
+              inset 1px 1px 0 rgba(255,255,255,0.10);
+  --raise-sm: 6px 6px 14px var(--lo), -4px -4px 11px var(--hi),
+              inset 1px 1px 0 rgba(255,255,255,0.10);
+  --inset:    inset 7px 7px 14px var(--lo), inset -5px -5px 10px var(--hi);
+  --face:     linear-gradient(145deg,#353535,#242424);
+}
+@media (prefers-color-scheme: light) {
+  :root { --bg:#e2e2e2; --well:#d3d3d3; --hi:#ffffff; --lo:#a3a3a3; --face:linear-gradient(145deg,#efefef,#d9d9d9); }
+}
+
+/* Header: কম উচ্চতা */
+.main-header { padding: 1.2rem 2rem !important; margin: 0.5rem 0 1.5rem !important; }
+.main-header h1 { margin: 0.4rem 0 0 !important; }
+.main-header p  { margin: 0.4rem 0 0 !important; }
+
+/* Uploader-এর ভেতরের "Upload" বোতাম: নীলচে border বাদ, emboss */
+[data-testid="stFileUploaderDropzone"] button,
+[data-testid="stBaseButton-secondary"] {
+  background: var(--face) !important;
+  color: var(--text) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  box-shadow: var(--raise-sm) !important;
+}
+[data-testid="stFileUploaderDropzone"] button:active { box-shadow: var(--inset) !important; }
+[data-testid="stFileUploaderDropzone"] button p,
+[data-testid="stFileUploaderDropzone"] button span { color: var(--text) !important; }
+
+
+/* ============================================================
+   12. WHITE THEME — সবসময় সাদা (OS dark হলেও)
+   Dark-এ ফিরতে চাইলে এই পুরো section 12 মুছে দিন
+   ============================================================ */
+:root {
+  --bg:      #e9e9e9;
+  --surface: #e9e9e9;
+  --well:    #dcdcdc;
+  --text:    #1a1a1a;
+  --muted:   #6b6b6b;
+  --hi:      #ffffff;
+  --lo:      #b4b4b4;
+  --line:    rgba(0,0,0,0.10);
+  --btn-bg:  linear-gradient(145deg,#2c2c2c,#0f0f0f);
+  --btn-fg:  #f7f7f7;
+  --raise:    12px 12px 26px var(--lo), -12px -12px 26px var(--hi);
+  --raise-sm: 6px 6px 14px var(--lo), -6px -6px 14px var(--hi);
+  --inset:    inset 7px 7px 14px var(--lo), inset -7px -7px 14px var(--hi);
+  --face:     linear-gradient(145deg,#f4f4f4,#dedede);
+}
+.stApp { background: var(--bg) !important; }
+
+[data-testid="stFileUploaderDropzone"] { border: 1px dashed rgba(0,0,0,0.28) !important; }
+.main-header { border-top: 1px solid rgba(255,255,255,0.9) !important; }
+.main-header h1 { text-shadow: 1px 1px 1px var(--hi), -1px -1px 1px rgba(0,0,0,0.12); }
+.stMarkdown h1, .stMarkdown h2, [data-testid="stHeading"] h1, [data-testid="stHeading"] h2 {
+  text-shadow: 1px 1px 1px var(--hi);
+}
+.main-header img { filter: none; }   /* pepco logo আসল রঙে */
+
+/* বোতামের লেখা সাদা, গাঢ় বোতামের উপর */
+.stButton > button:not([kind="secondary"]) p,
+.stDownloadButton button p,
+div[data-testid="stFormSubmitButton"] button p { color: var(--btn-fg) !important; }
+.stButton > button[kind="secondary"] p,
+[data-testid="stFileUploaderDropzone"] button p { color: var(--text) !important; }
+
+/* Alert: সাদা theme-এ গাঢ় লেখা */
+[data-testid="stAlert"], [data-testid="stAlert"] p, [data-testid="stAlert"] div { color: var(--text) !important; }
+
+
+/* ============================================================
+   13. White theme — Streamlit-এর নিজস্ব dark widget গুলো ঠিক করা
+   (select, file chip, expander bar, number/text input, dropdown popup)
+   ============================================================ */
+
+/* Selectbox / Multiselect: গর্ত + গাঢ় লেখা */
+[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+[data-testid="stSelectbox"] [data-baseweb="select"] > div > div,
+[data-testid="stMultiSelect"] [data-baseweb="select"] > div {
+  background: var(--well) !important;
+  background-color: var(--well) !important;
+  color: var(--text) !important;
+  border-radius: 12px !important;
+}
+[data-baseweb="select"] input,
+[data-baseweb="select"] span,
+[data-baseweb="select"] div { color: var(--text) !important; }
+[data-baseweb="select"] svg { fill: var(--text) !important; }
+
+/* Dropdown popup list */
+[data-baseweb="popover"] > div,
+[data-baseweb="popover"] ul,
+[data-baseweb="menu"] {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--raise-sm) !important;
+}
+[data-baseweb="menu"] li, [data-baseweb="menu"] li * { background: transparent !important; color: var(--text) !important; }
+[data-baseweb="menu"] li:hover, [data-baseweb="menu"] li[aria-selected="true"] { background: var(--well) !important; }
+
+/* Text / Number input: লেখা সবসময় দেখা যাবে */
+.stTextInput input, .stNumberInput input, textarea {
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  background: transparent !important;
+}
+.stNumberInput div[data-baseweb="input"] {
+  background: var(--well) !important;
+  box-shadow: var(--inset) !important;
+  border-radius: 12px !important;
+}
+.stNumberInput button { background: transparent !important; color: var(--text) !important; box-shadow: none !important; }
+.stNumberInput button svg { fill: var(--text) !important; }
+
+/* Expander header bar: কালো বার বাদ */
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] summary *,
+[data-testid="stExpander"] details > summary {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: var(--text) !important;
+}
+[data-testid="stExpander"] summary svg { fill: var(--text) !important; color: var(--text) !important; }
+
+/* Uploaded file chips: উঁচু সাদা chip */
+[data-testid="stFileUploaderFile"] {
+  background: var(--face) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--raise-sm) !important;
+}
+[data-testid="stFileUploaderFile"] *,
+[data-testid="stFileUploaderFileName"],
+[data-testid="stFileUploaderFile"] small { color: var(--text) !important; }
+[data-testid="stFileUploaderFile"] svg { fill: var(--text) !important; }
+
+/* Toggle (লাল বাদ → কালো) */
+[data-testid="stToggle"] label > div:first-child,
+label[data-baseweb="checkbox"] > div:first-child { background-color: var(--well) !important; }
+[data-testid="stToggle"] input:checked + div,
+label[data-baseweb="checkbox"] input:checked + div { background-color: #1a1a1a !important; }
+
+
+/* ============================================================
+   14. Final polish (v5)
+   ============================================================ */
+
+/* Number input (Material %): বক্স ফিরিয়ে আনা */
+[data-testid="stNumberInputContainer"] {
+  background: var(--well) !important;
+  box-shadow: var(--inset) !important;
+  border-radius: 12px !important;
+  border: none !important;
+}
+[data-testid="stNumberInputContainer"] div[data-baseweb="input"],
+[data-testid="stNumberInputContainer"] div[data-baseweb="base-input"] {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Expander click করলে মোটা কালো/ধূসর focus ring বাদ → নরম deboss */
+[data-testid="stExpander"] summary:focus,
+[data-testid="stExpander"] summary:focus-visible {
+  outline: none !important;
+  box-shadow: var(--inset) !important;
+  border-radius: 14px !important;
+}
+
+/* অপশনাল: Pepco logo সাদাকালো চাইলে নিচের লাইনের comment তুলে দিন */
+/* .main-header img { filter: grayscale(1) contrast(1.05) !important; } */
+
+
+/* ============================================================
+   15. Login card — উঁচু emboss card (auth.py-তে key="login_card" লাগবে)
+   ============================================================ */
+.st-key-login_card {
+  background: var(--face) !important;
+  border: none !important;
+  border-radius: 22px !important;
+  box-shadow: var(--raise) !important;
+  padding: 1.6rem 1.4rem !important;
+  margin-top: 1rem;
+}
+.st-key-login_card > div { border: none !important; }
+.st-key-login_card [data-testid="stVerticalBlockBorderWrapper"] {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+.st-key-login_card .card-title {
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 1rem;
+  font-weight: 700;
+  text-shadow: 1px 1px 1px var(--hi);
+}
+
+
+/* ============================================================
+   16. Login card — auth.py না বদলেও কাজ করবে
+   ".card-title" ('Sign in' লেখা) যে সবচেয়ে ভেতরের box-এ আছে সেটাকেই উঁচু করে
+   ============================================================ */
+[data-testid="stVerticalBlock"]:has(.card-title):not(:has([data-testid="stVerticalBlock"] .card-title)),
+.st-key-login_card {
+  background: var(--face) !important;
+  border: none !important;
+  border-radius: 22px !important;
+  box-shadow: var(--raise) !important;
+  padding: 1.8rem 1.6rem !important;
+  margin-top: 1.5rem !important;
+}
+[data-testid="stVerticalBlock"]:has(.card-title):not(:has([data-testid="stVerticalBlock"] .card-title)) .card-title {
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 1rem;
+  font-weight: 700;
+  text-shadow: 1px 1px 1px var(--hi);
+}
+
+
+/* ============================================================
+   17. Footer polish — ছোট, ধূসর লেখা + ভেতরে-বসা (deboss) রেখা
+   ============================================================ */
+.stApp .footer-border .footer-text {
+  font-size: 12px !important;
+  letter-spacing: 0.06em;
+  color: var(--muted) !important;
+}
+.footer-border { border-top: none !important; }
+.footer-border::before {
+  content: "";
+  display: block;
+  height: 2px;
+  border-radius: 2px;
+  margin-bottom: 14px;
+  background: var(--lo);
+  box-shadow: 0 1px 0 var(--hi);
+}
