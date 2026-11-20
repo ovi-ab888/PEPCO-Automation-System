@@ -17,6 +17,7 @@ Field config entry:
   "size": 60,                    # qr only
   "font": "arial",               # optional, key into FONTS dict below
   "rotate": 90,                  # optional, text only: 0/90/180/270
+  "max_length": 80,              # optional, rotated text only: beshi lomba hole font choto hoy
 }
 """
 
@@ -319,6 +320,16 @@ def fill_single_label(template_path: str, row: dict, field_config: list) -> byte
             if rot and not text_out.strip():
                 continue
             if rot:
+                # "max_length": text-er lomba (pt) er upor limit; beshi hole font size komay
+                max_len = field.get("max_length")
+                if max_len:
+                    try:
+                        tw = fitz.Font(fontfile=fontfile).text_length(text_out, fontsize=font_size) if fontfile \
+                            else fitz.get_text_length(text_out, fontname=fontname, fontsize=font_size)
+                    except Exception:
+                        tw = fitz.get_text_length(text_out, fontname="helv", fontsize=font_size)
+                    if tw > max_len:
+                        font_size = font_size * max_len / tw
                 page.insert_text(
                     (x, y), text_out, fontsize=font_size, color=color,
                     fontname=fontname, fontfile=fontfile, rotate=rot,
