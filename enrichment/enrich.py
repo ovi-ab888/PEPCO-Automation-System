@@ -43,7 +43,7 @@ FINAL_COLS = [
 
 # DC Code dropdown options (notun option lagle ekhane add korun)
 DC_CODE_PLACEHOLDER = "-- Select --"
-DC_CODES = ["DC06", "DC15", "DC18", "DC21", "DC27", "DC30", "DCALL"]
+DC_CODES = ["DC06", "DC15", "DC18", "DC21", "DC27", "DC30", "DC/ALL"]
 
 # Helper column — user-er table-e dekhanor dorkar nai
 _HIDDEN_COLS = ["Item_name_EN"]
