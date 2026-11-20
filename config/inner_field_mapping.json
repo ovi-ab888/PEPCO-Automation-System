@@ -92,5 +92,24 @@
     "font_size": 7.5,
     "font": "helv",
     "prefix": ""
+  },
+  {
+    "name": "Season_st",
+    "type": "text",
+    "x": 164.5,
+    "y": 48.8,
+    "font_size": 9.4,
+    "font": "helv",
+    "prefix": ""
+  },
+  {
+    "name": "DC_Code",
+    "type": "text",
+    "x": 16.2,
+    "y": 117.0,
+    "font_size": 8.0,
+    "font": "hebo",
+    "prefix": "",
+    "rotate": 90
   }
 ]
