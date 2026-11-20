@@ -55,5 +55,24 @@
     "font": "hebo",
     "prefix": "",
     "suffix": ""
+  },
+  {
+    "name": "Season_st",
+    "type": "text",
+    "x": 227.3,
+    "y": 80.8,
+    "font_size": 17.0,
+    "font": "helv",
+    "prefix": ""
+  },
+  {
+    "name": "DC_Code",
+    "type": "text",
+    "x": 271.8,
+    "y": 265.2,
+    "font_size": 15.0,
+    "font": "hebo",
+    "prefix": "",
+    "rotate": 90
   }
 ]
