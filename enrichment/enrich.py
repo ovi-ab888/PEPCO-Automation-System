@@ -43,16 +43,23 @@ FINAL_COLS = [
 
 # DC Code dropdown options (notun option lagle ekhane add korun)
 DC_CODES = ["DC06", "DC15", "DC18", "DC21", "DC27", "DC30"]
-DC_ALL = "DCALL"   # sob DC hole shudhu eta print hobe
+DC_ALL = "DCALL"          # checkbox-er naam (UI te)
+DC_ALL_TEXT = "DC/ALL"    # label/data te ja print hobe
 
 
 def build_dc_code(selected) -> str:
-    """Multi-select -> label text. DCALL thakle shudhu DCALL.
-    Ekadhik DC hole DC06/DC15/DC18 (buyer rule: forward slash, fixed order)."""
+    """Checkbox selection -> label text.
+    DCALL thakle -> DC/ALL
+    Ekta hole    -> DC30
+    Ekadhik hole -> DC06/15/18 (prefix ekbar, baki number gulo / diye)"""
     sel = list(selected or [])
     if DC_ALL in sel:
-        return DC_ALL
-    return "/".join(c for c in DC_CODES if c in sel)
+        return DC_ALL_TEXT
+    picked = [c for c in DC_CODES if c in sel]
+    if not picked:
+        return ""
+    return picked[0] + "".join("/" + c[2:] for c in picked[1:])
+
 
 # Helper column — user-er table-e dekhanor dorkar nai
 _HIDDEN_COLS = ["Item_name_EN"]
