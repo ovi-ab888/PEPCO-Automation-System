@@ -16,6 +16,7 @@ Field config entry:
   "width": 100, "height": 30,    # barcode only
   "size": 60,                    # qr only
   "font": "arial",               # optional, key into FONTS dict below
+  "rotate": 90,                  # optional, text only: 0/90/180/270
 }
 """
 
@@ -312,11 +313,22 @@ def fill_single_label(template_path: str, row: dict, field_config: list) -> byte
                 if align == "center":
                     x = box_x0 + ((box_x1 - box_x0) - text_width * sx) / 2
 
-            morph = (fitz.Point(x, y), fitz.Matrix(sx, 1)) if sx < 1.0 else None
-            page.insert_text(
-                (x, y), text_out, fontsize=font_size, color=color,
-                fontname=fontname, fontfile=fontfile, morph=morph,
-            )
+            # "rotate": 0 / 90 / 180 / 270 (default 0). 90 = text neeche theke
+            # upore pora jay (counter-clockwise). x,y = text-er baseline start point.
+            rot = int(field.get("rotate", 0))
+            if rot and not text_out.strip():
+                continue
+            if rot:
+                page.insert_text(
+                    (x, y), text_out, fontsize=font_size, color=color,
+                    fontname=fontname, fontfile=fontfile, rotate=rot,
+                )
+            else:
+                morph = (fitz.Point(x, y), fitz.Matrix(sx, 1)) if sx < 1.0 else None
+                page.insert_text(
+                    (x, y), text_out, fontsize=font_size, color=color,
+                    fontname=fontname, fontfile=fontfile, morph=morph,
+                )
         elif ftype == "qr":
             size = field.get("size", 60)
             img_bytes = _make_qr_image(value)
