@@ -643,13 +643,21 @@ label[data-baseweb="checkbox"] input:checked + div { background-color: #1a1a1a !
 }
 
 
-/* ===== Multiselect chips (DC Code) ===== */
-span[data-baseweb="tag"] {
+/* ===== Multiselect chips (DC Code) =====
+   Upor-er "[data-baseweb=select] span/div { color: var(--text) !important }"
+   rule-ta chip-er lekha-o dark kore dichilo, tai ekhane beshi specificity diye override */
+[data-testid="stMultiSelect"] [data-baseweb="select"] span[data-baseweb="tag"] {
+    background: #111111 !important;
     background-color: #111111 !important;
+    border: 1px solid rgba(255,255,255,0.18) !important;
     border-radius: 8px !important;
 }
-span[data-baseweb="tag"] span,
-span[data-baseweb="tag"] svg {
+[data-testid="stMultiSelect"] [data-baseweb="select"] span[data-baseweb="tag"],
+[data-testid="stMultiSelect"] [data-baseweb="select"] span[data-baseweb="tag"] * {
     color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+[data-testid="stMultiSelect"] [data-baseweb="select"] span[data-baseweb="tag"] svg,
+[data-testid="stMultiSelect"] [data-baseweb="select"] span[data-baseweb="tag"] svg * {
     fill: #ffffff !important;
 }
