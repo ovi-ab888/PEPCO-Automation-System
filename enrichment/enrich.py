@@ -142,10 +142,13 @@ def enrich_dataframe(base_df: pd.DataFrame, detected_pl: str = "") -> pd.DataFra
             pln_raw = st.text_input("Enter PLN Price", value=str(detected_pl or ""), key="ui_pln_price")
         pln_price = parse_pln_price(pln_raw)
 
-        dc_sel = st.multiselect(
-            "Select DC Code (ekadhik hole ekshathe select korun)",
-            options=DC_CODES + [DC_ALL], default=[], key="ui_dc_code",
-        )
+        st.markdown("**Select DC Code**")
+        dc_cols = st.columns(len(DC_CODES) + 1)
+        dc_sel = []
+        for col, code in zip(dc_cols, DC_CODES + [DC_ALL]):
+            with col:
+                if st.checkbox(code, key=f"ui_dc_{code}"):
+                    dc_sel.append(code)
         dc_code = build_dc_code(dc_sel)
         if DC_ALL in dc_sel and len(dc_sel) > 1:
             st.caption("DCALL select kora ache, tai label e shudhu DCALL print hobe.")
