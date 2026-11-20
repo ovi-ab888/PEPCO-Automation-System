@@ -42,8 +42,17 @@ FINAL_COLS = [
 ]
 
 # DC Code dropdown options (notun option lagle ekhane add korun)
-DC_CODE_PLACEHOLDER = "-- Select --"
-DC_CODES = ["DC06", "DC15", "DC18", "DC21", "DC27", "DC30", "DC/ALL"]
+DC_CODES = ["DC06", "DC15", "DC18", "DC21", "DC27", "DC30"]
+DC_ALL = "DCALL"   # sob DC hole shudhu eta print hobe
+
+
+def build_dc_code(selected) -> str:
+    """Multi-select -> label text. DCALL thakle shudhu DCALL.
+    Ekadhik DC hole DC06/DC15/DC18 (buyer rule: forward slash, fixed order)."""
+    sel = list(selected or [])
+    if DC_ALL in sel:
+        return DC_ALL
+    return "/".join(c for c in DC_CODES if c in sel)
 
 # Helper column — user-er table-e dekhanor dorkar nai
 _HIDDEN_COLS = ["Item_name_EN"]
@@ -100,7 +109,7 @@ def enrich_dataframe(base_df: pd.DataFrame, detected_pl: str = "") -> pd.DataFra
         pdf_item_name_en = re.sub(r"^\d+\.\s*", "", (first_row.get("Item_name_EN") or "").strip()).strip()
 
         # ============ Department / Product / Washing / PLN ============
-        c1, c2, c3, c4, c5 = st.columns(5)
+        c1, c2, c3, c4 = st.columns(4)
 
         depts = translations_df["DEPARTMENT"].dropna().unique().tolist()
         default_dept = map_item_class_to_dept_label(pdf_item_class)
@@ -133,9 +142,13 @@ def enrich_dataframe(base_df: pd.DataFrame, detected_pl: str = "") -> pd.DataFra
             pln_raw = st.text_input("Enter PLN Price", value=str(detected_pl or ""), key="ui_pln_price")
         pln_price = parse_pln_price(pln_raw)
 
-        with c5:
-            dc_sel = st.selectbox("Select DC Code", options=[DC_CODE_PLACEHOLDER] + DC_CODES, index=0, key="ui_dc_code")
-        dc_code = "" if dc_sel == DC_CODE_PLACEHOLDER else dc_sel
+        dc_sel = st.multiselect(
+            "Select DC Code (ekadhik hole ekshathe select korun)",
+            options=DC_CODES + [DC_ALL], default=[], key="ui_dc_code",
+        )
+        dc_code = build_dc_code(dc_sel)
+        if DC_ALL in dc_sel and len(dc_sel) > 1:
+            st.caption("DCALL select kora ache, tai label e shudhu DCALL print hobe.")
 
         # ============ Material Composition + Care ============
         composition_ctx = render_composition_care_section()
