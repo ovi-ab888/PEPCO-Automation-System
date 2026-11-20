@@ -33,13 +33,17 @@ FINAL_COLS = [
     "Item_classification", "Supplier_name", "today_date",
     "Collection", "Colour_SKU", "Style_Merch_Season",
     "Batch", "barcode", "washing_code", "EUR", "BGN",
-    "BAM", "PLN", "RON", "CZK", "UAH", "MKD", "RSD", "HUF",
+    "BAM", "PLN", "RON", "CZK", "UAH", "MKD", "RSD", "HUF", "DC_Code",
     "product_name", "Dept", "Item_name_English", "Season", "Sizes",
     "cm_size", "Cotton",
     "Pictogram", "Promotional", "Product_name_st", "Inner_kg", "Season_st",
     "Inner_qty", "Outer_qty", "TC_Number_st", "Barcode_st",
     "Composition_Care",
 ]
+
+# DC Code dropdown options (notun option lagle ekhane add korun)
+DC_CODE_PLACEHOLDER = "-- Select --"
+DC_CODES = ["DC06", "DC15", "DC18", "DC21", "DC27", "DC30", "DCALL"]
 
 # Helper column — user-er table-e dekhanor dorkar nai
 _HIDDEN_COLS = ["Item_name_EN"]
@@ -96,7 +100,7 @@ def enrich_dataframe(base_df: pd.DataFrame, detected_pl: str = "") -> pd.DataFra
         pdf_item_name_en = re.sub(r"^\d+\.\s*", "", (first_row.get("Item_name_EN") or "").strip()).strip()
 
         # ============ Department / Product / Washing / PLN ============
-        c1, c2, c3, c4 = st.columns(4)
+        c1, c2, c3, c4, c5 = st.columns(5)
 
         depts = translations_df["DEPARTMENT"].dropna().unique().tolist()
         default_dept = map_item_class_to_dept_label(pdf_item_class)
@@ -129,6 +133,10 @@ def enrich_dataframe(base_df: pd.DataFrame, detected_pl: str = "") -> pd.DataFra
             pln_raw = st.text_input("Enter PLN Price", value=str(detected_pl or ""), key="ui_pln_price")
         pln_price = parse_pln_price(pln_raw)
 
+        with c5:
+            dc_sel = st.selectbox("Select DC Code", options=[DC_CODE_PLACEHOLDER] + DC_CODES, index=0, key="ui_dc_code")
+        dc_code = "" if dc_sel == DC_CODE_PLACEHOLDER else dc_sel
+
         # ============ Material Composition + Care ============
         composition_ctx = render_composition_care_section()
 
@@ -145,6 +153,7 @@ def enrich_dataframe(base_df: pd.DataFrame, detected_pl: str = "") -> pd.DataFra
         if not product_row.empty else ""
     )
     df["washing_code"] = WASHING_CODES[wash_key]
+    df["DC_Code"] = dc_code
     df["Composition_Care"] = composition_ctx["composition_care_text"]
 
     # Price ladder: PLN paoa na gele column khali thake, kaj block hoy na
