@@ -641,3 +641,15 @@ label[data-baseweb="checkbox"] input:checked + div { background-color: #1a1a1a !
   background: var(--lo);
   box-shadow: 0 1px 0 var(--hi);
 }
+
+
+/* ===== Multiselect chips (DC Code) ===== */
+span[data-baseweb="tag"] {
+    background-color: #111111 !important;
+    border-radius: 8px !important;
+}
+span[data-baseweb="tag"] span,
+span[data-baseweb="tag"] svg {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+}
