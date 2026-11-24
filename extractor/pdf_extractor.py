@@ -167,6 +167,27 @@ def extract_order_id_only(file):
 
 
 # ================================================================
+#  DC ONLY  (extra PDF upload-er jonno — shudhu DC code, e.g. "DC15")
+# ================================================================
+def extract_dc_only(file):
+    try:
+        file.seek(0)
+    except Exception:
+        pass
+    try:
+        with fitz.open(stream=file.read(), filetype="pdf") as doc:
+            page1_text = doc[0].get_text() if len(doc) > 0 else ""
+    except Exception:
+        return ""
+    finally:
+        try:
+            file.seek(0)
+        except Exception:
+            pass
+    return extract_dc_code(page1_text)
+
+
+# ================================================================
 #  MAIN MULTI-ROW EXTRACTION
 # ================================================================
 def extract_rows_from_pdf(file, extra_order_ids: str = "") -> list:
