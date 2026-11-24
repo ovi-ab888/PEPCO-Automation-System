@@ -160,8 +160,11 @@ def enrich_dataframe(base_df: pd.DataFrame, detected_pl: str = "") -> pd.DataFra
                     detected_dcs.append(v)
         _dc_sig = (str(first_row.get("Order_ID", "")), tuple(detected_dcs))
         if st.session_state.get("_ui_dc_sig") != _dc_sig:   # notun PDF upload hole-i ekbar set hobe
-            for _c in DC_CODES + [DC_ALL]:
-                st.session_state[f"ui_dc_{_c}"] = _c in detected_dcs
+            # Upload kora PDF gulo-te DC_CODES-er shob gulo DC thakle -> shudhu DCALL (DC/ALL)
+            _all_present = all(c in detected_dcs for c in DC_CODES)
+            for _c in DC_CODES:
+                st.session_state[f"ui_dc_{_c}"] = (_c in detected_dcs) and not _all_present
+            st.session_state[f"ui_dc_{DC_ALL}"] = _all_present
             st.session_state["_ui_dc_sig"] = _dc_sig
         _unknown_dc = [d for d in detected_dcs if d not in DC_CODES]
         if _unknown_dc:
