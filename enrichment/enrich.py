@@ -155,9 +155,10 @@ def enrich_dataframe(base_df: pd.DataFrame, detected_pl: str = "") -> pd.DataFra
         detected_dcs = []
         if "_dc_detected" in df.columns:
             for v in df["_dc_detected"].dropna().astype(str):
-                v = v.strip()
-                if v and v not in detected_dcs:
-                    detected_dcs.append(v)
+                for part in v.split(","):          # "DC06,DC15" (extra PDF-er DC shoho) o cholbe
+                    part = part.strip()
+                    if part and part not in detected_dcs:
+                        detected_dcs.append(part)
         _dc_sig = (str(first_row.get("Order_ID", "")), tuple(detected_dcs))
         if st.session_state.get("_ui_dc_sig") != _dc_sig:   # notun PDF upload hole-i ekbar set hobe
             # Upload kora PDF gulo-te DC_CODES-er shob gulo DC thakle -> shudhu DCALL (DC/ALL)
