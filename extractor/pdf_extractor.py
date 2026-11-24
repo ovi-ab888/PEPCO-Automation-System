@@ -129,6 +129,22 @@ def extract_colour(pages_text):
 
 
 # ================================================================
+#  DESTINATION DC  ("Destination DC .......... 0006" -> "DC06")
+#  Proti PDF-e ekta-i DC thake. Number-ke 2-digit kore "DC" prefix.
+# ================================================================
+def extract_dc_code(page1_text, full_text=""):
+    for txt in (page1_text, full_text):
+        if not txt:
+            continue
+        m = re.search(r"Destination\s*DC\s*\.{2,}\s*(\d{1,4})", txt, re.IGNORECASE)
+        if not m:
+            m = re.search(r"Destination\s*DC[^\d\n]{0,20}\s*(\d{1,4})", txt, re.IGNORECASE)
+        if m:
+            return f"DC{int(m.group(1)):02d}"   # 0006 -> DC06, 0015 -> DC15
+    return ""
+
+
+# ================================================================
 #  ORDER ID ONLY  (extra PDF upload-er jonno)
 # ================================================================
 def extract_order_id_only(file):
@@ -207,6 +223,7 @@ def extract_rows_from_pdf(file, extra_order_ids: str = "") -> list:
     batch_text = make_batch(date_match.group(1) if date_match else None)
 
     colour = extract_colour(pages_text)
+    dc_detected = extract_dc_code(page1, full_text)
     season_value = f"{season.group(1)}{season.group(2)}" if season else ""
 
     # ---------------- SKU + main barcode (all pages) ----------------
@@ -267,6 +284,7 @@ def extract_rows_from_pdf(file, extra_order_ids: str = "") -> list:
             "Colour_SKU": make_colour_sku(colour, sku_this_row),
             "Style_Merch_Season": make_style_merch_season(style_value or None, style_suffix),
             "Batch": batch_text,
+            "_dc_detected": dc_detected,  # NEW — hidden, DC checkbox auto-select (enrich.py)
             "SKU": sku_this_row,
             "barcode": barcode_this_row,
             "cm_size": get_cm_size(size_val),
