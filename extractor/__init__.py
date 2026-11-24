@@ -12,7 +12,7 @@ TC_Number_st1..7 / Barcode_st1..7 numbered columns.
 """
 import pandas as pd
 
-from extractor.pdf_extractor import extract_rows_from_pdf, extract_order_id_only
+from extractor.pdf_extractor import extract_rows_from_pdf, extract_order_id_only, extract_dc_only
 
 __all__ = ["extract_rows_from_pdfs", "build_filename"]
 
@@ -52,4 +52,15 @@ def extract_rows_from_pdfs(pdf_files) -> pd.DataFrame:
     rows = extract_rows_from_pdf(primary, extra_order_ids="+".join(extra_ids))
     if not rows:
         return pd.DataFrame()
+
+    # Proti PDF-er nijer DC code collect kora (primary + extra), upload-er order-e, duplicate bad.
+    # "_dc_detected" = "DC06,DC15,..." — enrich.py eta bhenge DC checkbox auto-select kore.
+    dc_list = []
+    for dc in [rows[0].get("_dc_detected", "")] + [extract_dc_only(f) for f in others]:
+        if dc and dc not in dc_list:
+            dc_list.append(dc)
+    dc_joined = ",".join(dc_list)
+    for r in rows:
+        r["_dc_detected"] = dc_joined
+
     return pd.DataFrame(rows)
