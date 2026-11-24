@@ -130,11 +130,10 @@ def render_composition_care_section():
         if row.empty:
             return f"{pct}% {to_sentence_case(mat_name)}"
         translations = [to_sentence_case(mat_name)]
-        for col in materials_df.columns:
+        for col in materials_df.columns[1:]:  # EN column skip (position দিয়ে)
             val = row.iloc[0].get(col, "")
-            if pd.notna(val) and str(val).strip() and val != mat_name:
-                text = str(val).strip()
-                translations.append(to_sentence_case(text))
+            if pd.notna(val) and str(val).strip():
+                translations.append(to_sentence_case(str(val).strip()))
         return f"{pct}% {'/ '.join(translations)}"
 
     def get_component_name_translations(comp_name):
